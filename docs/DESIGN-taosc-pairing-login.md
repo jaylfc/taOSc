@@ -1,8 +1,9 @@
 # taOSc pairing and login
 
-Date: 2026-07-26. Status: proposed - needs @taOS-dev
-(core: Decisions + devices) and @taOS-website-dev (taOSgo/taos.my side)
-review before the server card goes claimable.
+Date: 2026-07-26. Status: taOSgo half REVIEWED and endorsed (bus 1360;
+website-side endpoint carded as tsk-5rukhy on prj-utbsh7). Core half (S4e
+pair-requests + grant Decision) still awaiting @taOS-dev review before that
+card goes claimable.
 
 Jay's requirements (2026-07-26, verbatim intent):
 1. **Two login methods** in the apps: **taOSgo** (paid cloud subscription) or
@@ -48,24 +49,34 @@ cloud dependency, works fully offline from taos.my.
 
 taOSgo is **discovery + reachability**, not a different trust path:
 
-1. User signs into their taOSgo account in the app.
-2. taos.my (control plane only - never in the data path, per bus 1287/1314)
-   returns the user's instance identity and mints a **tailnet preauth join
-   key** (the existing P3 host-pairing / P5 cluster-join primitive) so the
-   phone can reach the instance off-LAN.
-3. Phone joins the user's own tailnet, then runs the **same grant flow**
-   against the instance URL.
+1. The app calls `POST /api/taosgo/app-join` (website-side, carded as
+   tsk-5rukhy): credentials-in-body, one shot -
+   `{email, password, device_name?}` ->
+   `{join_key, login_server, hosts: [{handle, addr}]}`. **No taos.my session
+   or token is created or stored on the phone.** Its durable credentials are
+   the tailnet node key plus the instance device token from the grant flow,
+   which makes control-plane-only structural rather than promised.
+   Gate order: transport 503, per-IP limit 429 (pre-auth), timing-equalised
+   auth 401, email_verified 403, taosgo_status in trialing/active 403.
+   `hosts: []` with 200 when the account has no instance yet - the app shows
+   guidance, not an error.
+2. Phone joins the user's own tailnet with the key, then runs the **same
+   grant flow** against the instance URL.
 
-Per 1314's standing caveats, these bind the pairing cards: deny-by-default
-ACL review (`deploy/headscale/policy.hujson`, autogroup:self) before the
-first phone joins; phone nodes ephemeral as a deliberate choice; any
-taos.my API use via a scoped controller token (`require_account_scope`),
-never a browser session.
+Settled positions binding the pairing cards (1314 as amended by 1360):
+deny-by-default ACL review (`deploy/headscale/policy.hujson`,
+autogroup:self) is website-side work and gates the first real phone JOIN,
+not the client build; phone nodes are **non-ephemeral** (1360 divergence
+from 1314: join keys are single-use with a TTL, so an auto-removed
+ephemeral node would force password re-entry whenever the phone sleeps too
+long - node hygiene comes from revocation instead; **flagged for Jay's veto
+pre-merge**).
 
-**Open question for @taOS-website-dev:** the taOSgo account-login + join-key
-mint API from a native app, and the practical shape of tailnet join on
-iOS/Android (Tailscale SDK vs companion VPN app) - this decides how much of
-method B is v1.
+**Tailnet join, client half (my call per 1360):** iOS v1 uses the official
+Tailscale app pointed at the custom `login_server` - an embedded
+NetworkExtension via libtailscale is entitlement- and effort-heavy and is
+deferred. Android decides at S3 pairing-card time (either route works;
+nothing website-side changes with the choice).
 
 ## Card impact
 
