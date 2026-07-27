@@ -1,9 +1,10 @@
 # taOSc pairing and login
 
-Date: 2026-07-26. Status: taOSgo half REVIEWED and endorsed (bus 1360;
-website-side endpoint carded as tsk-5rukhy on prj-utbsh7). Core half (S4e
-pair-requests + grant Decision) still awaiting @taOS-dev review before that
-card goes claimable.
+Date: 2026-07-26 (revised 2026-07-27). Status: BOTH HALVES REVIEWED and
+cleared to card. taOSgo half endorsed by @taOS-website-dev (bus 1360;
+endpoint carded as tsk-5rukhy on prj-utbsh7). Core half reviewed by
+@taOS-dev (bus 1490): sound to card with F1 and F2 written in, which this
+revision does.
 
 Jay's requirements (2026-07-26, verbatim intent):
 1. **Two login methods** in the apps: **taOSgo** (paid cloud subscription) or
@@ -34,6 +35,50 @@ through the existing Decisions system:
 4. App polls `GET /api/devices/pair-requests/{id}` → on approval:
    device row + `scoped_token` (shown once → Keychain). On deny/expiry:
    terminal status.
+
+### Identity binding (core review, bus 1490 - both are must-specify)
+
+**F1. The device binds to the APPROVING human's user_id.** The pair-request
+is unauthenticated, so it has no session owner. The minted device binds to
+the user_id of the session that ANSWERS the grant Decision
+(`answer_decision`'s `user.user_id` in `routes/decisions.py`) - never a
+fixed or admin default. Anything else is a cross-user device grant under
+multi-user.
+
+**F2. Approval binds to the specific pair_request_id, not "the pending
+request".** Follow the existing metadata side-effect pattern: the Decision
+carries `metadata={kind: "device_pairing", pair_request_id}`, and a
+`_apply_device_pairing_grant` handler (sibling to `_apply_execution_grant` /
+`_apply_app_grant`) transitions THAT request with an atomic
+`UPDATE ... WHERE id=? AND status='pending'`, exactly as
+`auth_requests_store.set_decision` does. A generic "allow taOSc?" grant
+would let a racing attacker's request ride the victim's approval - the
+classic confused deputy.
+
+### Hardening by reuse (bus 1490; reuse, do not re-implement)
+
+- **F3.** `verify_code` is a human comparison nonce only: never sent back to
+  the server, never server-checked. Secrets module, >= 6 digits. Do NOT add
+  a server-side code check.
+- **F4.** Cap TOTAL pending pair-requests (mirror the auth-requests
+  `_PENDING_CAP`) plus ~10 min expiry - not per-IP only, which a CGNAT or
+  distributed flood defeats while raising code-collision odds.
+- **F5.** Mint via the existing `DeviceStore.register` (gets the `taosdev_`
+  token, per-user cap of 50, touch/last_seen, revoke and `require_device`
+  for free). Apply an ios/watchos/android platform whitelist - the store
+  does not validate. Wire `POST /api/devices/pair-requests` and
+  `GET .../{id}` into `auth_middleware._is_exempt` using the exact
+  method-sensitive single-segment pattern used for
+  `/api/agents/auth-requests/{id}`. Add a per-request approve lock (TOCTOU
+  double-mint).
+- **F6.** Enforce expiry at APPROVE time (pending AND not-expired ->
+  accepted), not merely hidden from the poll.
+- **F7.** taOSgo adds NO new trust path: the phone still runs the same local
+  grant Decision. Do not add a taOSgo-specific shortcut.
+
+Model to copy verbatim: `routes/agent_auth_requests.py`,
+`auth_requests_store.py` (atomic `set_decision`), and the `_apply_*_grant`
+handlers in `decisions.py`.
 
 Abuse controls: requests expire (~10 min), unauthenticated POST is
 rate-limited per IP, the Decision shows requester IP + platform, and
