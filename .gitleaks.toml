@@ -1,0 +1,28 @@
+title = "taOSc gitleaks config"
+
+# Extend the built-in gitleaks rule set rather than replacing it. The
+# defaults already cover credentials, private keys, AWS/GCP keys, and so
+# on. The rules below add taOSc-specific patterns: RFC1918 private IPs
+# (which must never appear in committed code) and Headscale tailnet
+# hostnames (*.ts.net).
+
+[extend]
+useDefault = true
+
+# RFC1918 private address space: 10/8, 172.16/12, 192.168/16.
+# These are internal network addresses that should never be committed.
+# Flagging them prevents accidental leakage of LAN topology in docs,
+# configs, or logs.
+[[rules]]
+description = "RFC1918 private IP address"
+id = "rfc1918-private-ip"
+regex = '''(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})'''
+keywords = ["10.", "172.", "192.168."]
+
+# Headscale tailnet hostnames (*.ts.net). These are routable device names
+# on a user's private tailnet and must not be committed to the repo.
+[[rules]]
+description = "Tailnet hostname (*.ts.net)"
+id = "tailnet-hostname"
+regex = '''[\w-]+\.ts\.net'''
+keywords = ["ts.net"]
