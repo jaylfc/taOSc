@@ -1,0 +1,346 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		/* Begin PBXBuildFile section */
+		3F81FB5D72ED4062AE3D1698 /* taOSc/App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A0CAE2E06A464B8714EB5F /* taOSc/App.swift */; };
+		B5B014350756472EA2B0857F /* taOSc/ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3409068582064EFE8957B8CD /* taOSc/ContentView.swift */; };
+		88FAE113BD49443B8264C64A /* taOSc/WebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EDCFA5DA414ADD8E948FDD /* taOSc/WebView.swift */; };
+		9A5E159CCA8241C4BEA227B8 /* taOSc/ServerURLView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8A22966FF043DFBCE7A185 /* taOSc/ServerURLView.swift */; };
+		2197E2DA53574EA382D78670 /* taOSc/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20480659F49340AB8A12CDF3 /* taOSc/SettingsView.swift */; };
+		54FA220777604C448341E483 /* taOSc/ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB261B06649743919AF3D5B0 /* taOSc/ErrorView.swift */; };
+		7D7E7889E03243699558A96D /* taOSc/SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD77BC0F861D4688947FF365 /* taOSc/SettingsManager.swift */; };
+		636F985EA9A242CAA230DDF1 /* taOSc/URLValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388EE13ABE154ACF879D3DB3 /* taOSc/URLValidator.swift */; };
+		6CFC112CDC6E4E78899AEFFC /* taOScTests/URLValidationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96457F9AFF85418D84790113 /* taOScTests/URLValidationTests.swift */; };
+		F5154284F2A942BE8842615C /* taOScTests/SettingsStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D385D76C72A54FD1AD69E5B8 /* taOScTests/SettingsStorageTests.swift */; };
+		/* End PBXBuildFile section */
+
+		/* Begin PBXContainerItemProxy section */
+		241DBF16B77B46FF990821C9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BF6906984DE54683BDD382A9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalID = 13005E5AF5BA4E57A27E930E;
+			remoteInfo = taOSc;
+		};
+		/* End PBXContainerItemProxy section */
+
+		/* Begin PBXFileReference section */
+		06A0CAE2E06A464B8714EB5F /* taOSc/App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/App.swift; };
+		3409068582064EFE8957B8CD /* taOSc/ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/ContentView.swift; };
+		10EDCFA5DA414ADD8E948FDD /* taOSc/WebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/WebView.swift; };
+		1B8A22966FF043DFBCE7A185 /* taOSc/ServerURLView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/ServerURLView.swift; };
+		20480659F49340AB8A12CDF3 /* taOSc/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/SettingsView.swift; };
+		EB261B06649743919AF3D5B0 /* taOSc/ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/ErrorView.swift; };
+		FD77BC0F861D4688947FF365 /* taOSc/SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/SettingsManager.swift; };
+		388EE13ABE154ACF879D3DB3 /* taOSc/URLValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOSc/URLValidator.swift; };
+		70C27777449E4B518346F3A3 /* taOSc/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = taOSc/Info.plist; };
+		96457F9AFF85418D84790113 /* taOScTests/URLValidationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOScTests/URLValidationTests.swift; };
+		D385D76C72A54FD1AD69E5B8 /* taOScTests/SettingsStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = taOScTests/SettingsStorageTests.swift; };
+		6C2DB467A8DA41C9A069E982 /* taOSc.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = taOSc.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8DBBB50A0D9940D993B5CDC0 /* taOScTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = taOScTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		/* End PBXFileReference section */
+
+		/* Begin PBXFrameworksBuildPhase section */
+		7F4248417DAC480AB1E16983 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0x0000000000000000;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		21448341F4C842BCB4A8D717 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0x0000000000000000;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		/* End PBXFrameworksBuildPhase section */
+
+		/* Begin PBXGroup section */
+		F0EDAEF4164145D099658482 /* main group */ = {
+			isa = PBXGroup;
+			children = (
+				F38F1AD07A974DA6904F1224 /* taOSc */,
+				7E685AA04B1C455583FE64A5 /* taOScTests */,
+				1CF72E20EA704CE0938E51D2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F38F1AD07A974DA6904F1224 /* taOSc */ = {
+			isa = PBXGroup;
+			children = (
+				06A0CAE2E06A464B8714EB5F /* App.swift */,
+				3409068582064EFE8957B8CD /* ContentView.swift */,
+				10EDCFA5DA414ADD8E948FDD /* WebView.swift */,
+				1B8A22966FF043DFBCE7A185 /* ServerURLView.swift */,
+				20480659F49340AB8A12CDF3 /* SettingsView.swift */,
+				EB261B06649743919AF3D5B0 /* ErrorView.swift */,
+				FD77BC0F861D4688947FF365 /* SettingsManager.swift */,
+				388EE13ABE154ACF879D3DB3 /* URLValidator.swift */,
+			);
+			sourceTree = "<group>";
+		};
+		7E685AA04B1C455583FE64A5 /* taOScTests */ = {
+			isa = PBXGroup;
+			children = (
+				96457F9AFF85418D84790113 /* URLValidationTests.swift */,
+				D385D76C72A54FD1AD69E5B8 /* SettingsStorageTests.swift */,
+			);
+			sourceTree = "<group>";
+		};
+		1CF72E20EA704CE0938E51D2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6C2DB467A8DA41C9A069E982 /* taOSc.app */,
+				8DBBB50A0D9940D993B5CDC0 /* taOScTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		/* End PBXGroup section */
+
+		/* Begin PBXNativeTarget section */
+		13005E5AF5BA4E57A27E930E /* taOSc */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FE4D092E8F5A46A6A5FB47E6 /* Build configuration list for taOSc */;
+			buildPhases = (
+				4C0262907DF04B558CC29A4E /* Sources */,
+				7F4248417DAC480AB1E16983 /* Frameworks */,
+				A9C9FC54F0EF49F9AD98F746 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = taOSc;
+			productName = taOSc;
+			productReference = 6C2DB467A8DA41C9A069E982 /* taOSc.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CC32F88890264FABAC7DA941 /* taOScTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1535D470044C4C88B258AC27 /* Build configuration list for taOScTests */;
+			buildPhases = (
+				A3FEE67DDACA4C19A719AFFC /* Sources */,
+				21448341F4C842BCB4A8D717 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5E40EE5659344EDD8D195DA8 /* PBXTargetDependency */,
+			);
+			name = taOScTests;
+			productName = taOScTests;
+			productReference = 8DBBB50A0D9940D993B5CDC0 /* taOScTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		/* End PBXNativeTarget section */
+
+		/* Begin PBXProject section */
+		BF6906984DE54683BDD382A9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				ORGANIZATIONNAME = jaylfc;
+				TargetAttributes = {
+					13005E5AF5BA4E57A27E930E = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					CC32F88890264FABAC7DA941 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 13005E5AF5BA4E57A27E930E;
+					};
+				};
+			};
+			buildConfigurationList = 3AE2074916C947C78A65A076 /* Build configuration list for PBXProject */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedPlugins = NO;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = F0EDAEF4164145D099658482;
+			productRefGroup = 1CF72E20EA704CE0938E51D2;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				13005E5AF5BA4E57A27E930E /* taOSc */,
+				CC32F88890264FABAC7DA941 /* taOScTests */,
+			);
+		};
+		/* End PBXProject section */
+
+		/* Begin PBXResourcesBuildPhase section */
+		A9C9FC54F0EF49F9AD98F746 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 0x0000000000000000;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		/* End PBXResourcesBuildPhase section */
+
+		/* Begin PBXSourcesBuildPhase section */
+		4C0262907DF04B558CC29A4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0x0000000000000000;
+			files = (
+				3F81FB5D72ED4062AE3D1698 /* App.swift in Sources */,
+				B5B014350756472EA2B0857F /* ContentView.swift in Sources */,
+				88FAE113BD49443B8264C64A /* WebView.swift in Sources */,
+				9A5E159CCA8241C4BEA227B8 /* ServerURLView.swift in Sources */,
+				2197E2DA53574EA382D78670 /* SettingsView.swift in Sources */,
+				54FA220777604C448341E483 /* ErrorView.swift in Sources */,
+				7D7E7889E03243699558A96D /* SettingsManager.swift in Sources */,
+				636F985EA9A242CAA230DDF1 /* URLValidator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3FEE67DDACA4C19A719AFFC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0x0000000000000000;
+			files = (
+				6CFC112CDC6E4E78899AEFFC /* URLValidationTests.swift in Sources */,
+				F5154284F2A942BE8842615C /* SettingsStorageTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		/* End PBXSourcesBuildPhase section */
+
+		/* Begin PBXTargetDependency section */
+		5E40EE5659344EDD8D195DA8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 13005E5AF5BA4E57A27E930E /* taOSc */;
+			targetProxy = 241DBF16B77B46FF990821C9 /* PBXContainerItemProxy */;
+		};
+		/* End PBXTargetDependency section */
+
+		/* Begin XCBuildConfiguration section */
+		B0816F8A3A684145A040B444 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				alwaysSearchUserPaths = NO;
+				clonedSourcePackages = ();
+				headerSearchPaths = ();
+				librarySearchPaths = ();
+				stripStyle = debug;
+			};
+			name = Debug;
+		};
+		7C6A578BE2D74247BDF1BDDB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				alwaysSearchUserPaths = NO;
+				clonedSourcePackages = ();
+				headerSearchPaths = ();
+				librarySearchPaths = ();
+				stripStyle = all;
+			};
+			name = Release;
+		};
+		D94680D7353E4F8CB5B6E6D0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGNING_MODE = automatic;
+				INFOPLIST_FILE = taOSc/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taosc.taOSc;
+				PRODUCT_NAME = taOSc;
+				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				TARGETED_DEVICE_FAMILY = 1;
+				ENABLE_BITCODE = NO;
+			};
+			name = Debug;
+		};
+		C2DA1B0C73AE4B769DD16209 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGNING_MODE = automatic;
+				INFOPLIST_FILE = taOSc/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taosc.taOSc;
+				PRODUCT_NAME = taOSc;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				ENABLE_BITCODE = NO;
+			};
+			name = Release;
+		};
+		B36240DD686545DDB3D5222E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGNING_MODE = automatic;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taosc.taOScTests;
+				PRODUCT_NAME = taOScTests;
+				SWIFT_VERSION = 5.0;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				TARGETED_DEVICE_FAMILY = 1;
+				ENABLE_BITCODE = NO;
+				TEST_HOST = $(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc;
+				BUNDLE_LOADER = $(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc;
+			};
+			name = Debug;
+		};
+		6531715DB03740B0B1677D44 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGNING_MODE = automatic;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.taosc.taOScTests;
+				PRODUCT_NAME = taOScTests;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				ENABLE_BITCODE = NO;
+				TEST_HOST = $(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc;
+				BUNDLE_LOADER = $(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc;
+			};
+			name = Release;
+		};
+		/* End XCBuildConfiguration section */
+
+		/* Begin XCConfigurationList section */
+		3AE2074916C947C78A65A076 /* Build configuration list for PBXProject */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0816F8A3A684145A040B444 /* Debug */,
+				7C6A578BE2D74247BDF1BDDB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FE4D092E8F5A46A6A5FB47E6 /* Build configuration list for taOSc */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D94680D7353E4F8CB5B6E6D0 /* Debug */,
+				C2DA1B0C73AE4B769DD16209 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1535D470044C4C88B258AC27 /* Build configuration list for taOScTests */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B36240DD686545DDB3D5222E /* Debug */,
+				6531715DB03740B0B1677D44 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		/* End XCConfigurationList section */
+
+	};
+	rootObject = BF6906984DE54683BDD382A9 /* Project object */;
+}
