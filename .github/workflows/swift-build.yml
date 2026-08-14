@@ -1,0 +1,23 @@
+name: swift-build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test
+        run: |
+          xcodebuild build test \
+            -project apple/taOSc.xcodeproj \
+            -scheme taOSc \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -sdk iphonesimulator \
+            -derivedDataPath ${{ runner.temp }}/taOSc-DerivedData \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY=
