@@ -1,0 +1,44 @@
+name: swift-build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate --spec apple/project.yml --project apple
+      - name: Build and test
+        run: |
+          SIM=$(xcrun simctl list devices available -j | jq -r '.devices | to_entries[] | select(.key|test("iOS")) | .value[] | select(.name|test("^iPhone")) | .name' | head -1)
+          xcodebuild build test \
+            -project apple/taOSc.xcodeproj \
+            -scheme taOSc \
+            -destination "platform=iOS Simulator,name=$SIM" \
+            -sdk iphonesimulator \
+            -derivedDataPath ${{ runner.temp }}/taOSc-DerivedData \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY=
+      # Probe 1 - project level. Needs NO scheme, so it answers even when the
+      # scheme is the defect.
+      - name: Diagnostic - xcodebuild -list (project)
+        if: always()
+        run: |
+          xcodebuild -project apple/taOSc.xcodeproj -list -json \
+            || echo "PROBE1 xcodebuild -list FAILED rc=$?"
+
+      # Probe 2 - scheme level. May legitimately print nothing; that silence
+      # is the discriminator. Separate step so probe 1 survives probe 2 dying.
+      - name: Diagnostic - xcodebuild -showBuildSettings (scheme)
+        if: always()
+        run: |
+          xcodebuild -project apple/taOSc.xcodeproj -scheme taOSc \
+            -showBuildSettings \
+            || echo "PROBE2 -showBuildSettings FAILED rc=$?"
