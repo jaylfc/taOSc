@@ -1,0 +1,28 @@
+options:
+  bundleIdPrefix: com.jaylfc
+  xcodeVersion: "16.0"
+
+targets:
+  taOSc:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - taOSc
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.jaylfc.taOSc
+      GENERATE_INFOPLIST_FILE: NO
+      INFOPLIST_FILE: taOSc/Info.plist
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      SWIFT_VERSION: "5.0"
+      CODE_SIGN_STYLE: Automatic
+    scheme:
+      testTargets:
+        - taOScTests
+  taOScTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - taOScTests
+    dependencies:
+      - target: taOSc
