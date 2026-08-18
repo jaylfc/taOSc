@@ -26,7 +26,6 @@ struct TaOSgoEntryView: View {
                     }
                 case .idle:
                     taOSgoForm
-                        .environment(\.dismiss, dismiss)
                 }
             } else {
                 taOSgoForm
