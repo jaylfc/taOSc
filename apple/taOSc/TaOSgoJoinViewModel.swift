@@ -3,7 +3,7 @@ import Foundation
 final class TaOSgoJoinViewModel: ObservableObject {
     @Published var phase: Phase
 
-    enum Phase {
+    enum Phase: Equatable {
         case idle
         case joining
         case noInstance
