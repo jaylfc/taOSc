@@ -18,7 +18,20 @@ final class SettingsStore: ObservableObject {
         !serverURL.isEmpty
     }
 
+    var isPaired: Bool {
+        do {
+            return (try KeychainStore.shared.readToken()) != nil
+        } catch {
+            return false
+        }
+    }
+
     func saveServerURL(_ url: String) {
         serverURL = url
+    }
+
+    func logout() throws {
+        try KeychainStore.shared.deleteToken()
+        serverURL = ""
     }
 }
