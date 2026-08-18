@@ -1,0 +1,17 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "rfc1918-ipv4"
+description = "RFC1918 IPv4 literal"
+regex = '''\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b'''
+
+[[rules]]
+id = "cgnat-tailnet-ipv4"
+description = "CGNAT 100.64.0.0/10 IPv4 literal (tailnet address)"
+regex = '''\b100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b'''
+
+[[rules]]
+id = "ts-net-hostname"
+description = "Tailscale *.ts.net hostname"
+regex = '''\b[a-z0-9-]+(\.[a-z0-9-]+)*\.ts\.net\b'''

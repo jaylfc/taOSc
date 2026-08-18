@@ -1,0 +1,12 @@
+# Fixture file for secret-scan self-test
+# This file contains intentionally placed fake secrets for CI gate testing.
+# DO NOT remove or modify these fixtures - they are used by the secret-scan-selftest job.
+
+# Fake RFC1918 IP (10.x.x.x range)
+secret = "10.0.0.1"
+
+# Fake CGNAT IPv4 literal in 100.64.0.0/10 but outside 100.64.x.x (100.100.0.0/16)
+secret = "100.100.0.1"
+
+# Fake Tailscale hostname
+secret = "example.ts.net"
