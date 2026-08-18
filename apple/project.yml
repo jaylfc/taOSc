@@ -1,3 +1,5 @@
+name: taOSc
+
 options:
   bundleIdPrefix: com.jaylfc
   xcodeVersion: "16.0"
