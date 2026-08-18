@@ -21,3 +21,19 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY=
+      # Probe 1 - project level. Needs NO scheme, so it answers even when the
+      # scheme is the defect.
+      - name: Diagnostic - xcodebuild -list (project)
+        if: always()
+        run: |
+          xcodebuild -project apple/taOSc.xcodeproj -list -json \
+            || echo "PROBE1 xcodebuild -list FAILED rc=$?"
+
+      # Probe 2 - scheme level. May legitimately print nothing; that silence
+      # is the discriminator. Separate step so probe 1 survives probe 2 dying.
+      - name: Diagnostic - xcodebuild -showBuildSettings (scheme)
+        if: always()
+        run: |
+          xcodebuild -project apple/taOSc.xcodeproj -scheme taOSc \
+            -showBuildSettings \
+            || echo "PROBE2 -showBuildSettings FAILED rc=$?"
