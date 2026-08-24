@@ -28,3 +28,5 @@ targets:
       - taOScTests
     dependencies:
       - target: taOSc
+    settings:
+      TEST_HOST: "$(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc"

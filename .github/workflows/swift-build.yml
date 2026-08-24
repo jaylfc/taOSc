@@ -22,10 +22,7 @@ jobs:
             -scheme taOSc \
             -destination "platform=iOS Simulator,name=$SIM" \
             -sdk iphonesimulator \
-            -derivedDataPath ${{ runner.temp }}/taOSc-DerivedData \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY=
+            -derivedDataPath ${{ runner.temp }}/taOSc-DerivedData
       # Probe 1 - project level. Needs NO scheme, so it answers even when the
       # scheme is the defect.
       - name: Diagnostic - xcodebuild -list (project)
