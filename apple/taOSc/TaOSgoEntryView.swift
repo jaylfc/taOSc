@@ -29,7 +29,6 @@ struct TaOSgoEntryView: View {
                 }
             } else {
                 taOSgoForm
-                    .environment(\.dismiss, dismiss)
             }
         }
         .navigationTitle("taOSgo Sign In")
