@@ -50,7 +50,6 @@ struct FirstRunView: View {
                 } else {
                     ErrorDestinationView(
                         message: "Could not reach the instance: the join response contained no usable host address.",
-                        errorState: errorState,
                         onBack: { path.removeLast() }
                     )
                 }
