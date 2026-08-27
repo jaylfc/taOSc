@@ -30,3 +30,4 @@ targets:
       - target: taOSc
     settings:
       TEST_HOST: "$(BUILT_PRODUCTS_DIR)/taOSc.app/taOSc"
+      GENERATE_INFOPLIST_FILE: YES
