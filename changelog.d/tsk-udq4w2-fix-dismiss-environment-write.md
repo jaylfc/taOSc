@@ -1,0 +1,3 @@
+### Fixed
+
+- Fix build error caused by using read-only environment key \`.dismiss` with \`.environment\(\:,\)`, which caused "cannot convert value of type 'KeyPath<EnvironmentValues, DismissAction>' to expected argument type 'WritableKeyPath<EnvironmentValues, DismissAction>'" compile error. The \`.dismiss` key is now only declared as a read-only @Environment variable in TaOSgoEntryView, which is the correct approach for accessing the dismiss action.

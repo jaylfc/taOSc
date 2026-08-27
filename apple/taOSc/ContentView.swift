@@ -8,7 +8,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let url = validatedURL {
+                if settings.hasServerURL, settings.isPaired, let url = validatedURL {
                     WebView(url: url, error: $webViewError)
                         .ignoresSafeArea()
                         .id("\(url.absoluteString)-\(reloadCounter)")
@@ -24,9 +24,7 @@ struct ContentView: View {
                             }
                         }
                 } else {
-                    FirstRunView { urlString in
-                        settings.saveServerURL(urlString)
-                    }
+                    FirstRunView(serverURL: $settings.serverURL)
                 }
             }
         }
