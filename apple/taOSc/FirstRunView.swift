@@ -38,27 +38,27 @@ struct FirstRunView: View {
                 }
             }
             .navigationDestination(for: TailnetJoinDestination.self) { destination in
-                guard let host = destination.response.hosts.first else {
-                    errorState.showError("No hosts available in the join response")
-                    return
-                }
-                guard let instanceURL = URL(string: host.addr) else {
-                    errorState.showError("Invalid host address: \(host.addr)")
-                    return
-                }
-                TailnetJoinView(
-                    joinKey: destination.response.join_key,
-                    loginServer: destination.response.login_server,
-                    instanceURL: instanceURL
-                ) { instanceURL in
-                    path.append(PairingGrantDestination(
-                        url: instanceURL,
-                        displayName: "iOS Device"
-                    ))
+                if let host = destination.response.hosts.first,
+                   let instanceURL = URL(string: host.addr) {
+                    TailnetJoinView(
+                        joinKey: destination.response.join_key,
+                        loginServer: destination.response.login_server,
+                        instanceURL: instanceURL
+                    ) { instanceURL in
+                        path.append(PairingGrantDestination(url: instanceURL, displayName: "iOS Device"))
+                    }
+                } else {
+                    ErrorDestinationView(
+                        message: "Could not reach the instance: the join response contained no usable host address.",
+                        errorState: errorState,
+                        onBack: { path.removeLast() }
+                    )
                 }
             }
             .navigationDestination(for: ErrorDestination.self) { destination in
-                ErrorDestinationView(message: destination.message)
+                ErrorDestinationView(message: destination.message) {
+                    path.removeLast()
+                }
             }
         }
     }
@@ -76,6 +76,7 @@ struct ErrorDestination: Hashable {
 struct ErrorDestinationView: View {
     let message: String
     @EnvironmentObject var errorState: ErrorStateStore
+    let onBack: () -> Void
     
     var body: some View {
         TerminalStateView(
@@ -86,6 +87,7 @@ struct ErrorDestinationView: View {
             buttonTitle: "Back",
             action: {
                 errorState.clearError()
+                onBack()
             }
         )
     }
