@@ -58,8 +58,12 @@ final class PairingGrantViewModel: ObservableObject {
                 case .pending:
                     try? await Task.sleep(nanoseconds: 3_000_000_000)
                 case .approved(let token):
-                    try? KeychainStore.shared.saveToken(token)
-                    self.phase = .approved
+                    do {
+                        try KeychainStore.shared.saveToken(token)
+                        self.phase = .approved
+                    } catch {
+                        self.phase = .unreachable("Failed to save pairing token: \(error.localizedDescription)")
+                    }
                     return
                 case .denied:
                     self.phase = .denied

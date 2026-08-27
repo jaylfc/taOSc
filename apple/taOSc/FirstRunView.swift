@@ -8,6 +8,7 @@ enum LoginMethod: Hashable {
 struct FirstRunView: View {
     @State private var path = NavigationPath()
     @Binding var serverURL: String
+    @EnvironmentObject var errorState: ErrorStateStore
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -37,17 +38,27 @@ struct FirstRunView: View {
                 }
             }
             .navigationDestination(for: TailnetJoinDestination.self) { destination in
-                let host = destination.response.hosts.first!
+                guard let host = destination.response.hosts.first else {
+                    errorState.showError("No hosts available in the join response")
+                    return
+                }
+                guard let instanceURL = URL(string: host.addr) else {
+                    errorState.showError("Invalid host address: \(host.addr)")
+                    return
+                }
                 TailnetJoinView(
                     joinKey: destination.response.join_key,
                     loginServer: destination.response.login_server,
-                    instanceURL: URL(string: host.addr)!
+                    instanceURL: instanceURL
                 ) { instanceURL in
                     path.append(PairingGrantDestination(
                         url: instanceURL,
                         displayName: "iOS Device"
                     ))
                 }
+            }
+            .navigationDestination(for: ErrorDestination.self) { destination in
+                ErrorDestinationView(message: destination.message)
             }
         }
     }
@@ -56,6 +67,40 @@ struct FirstRunView: View {
 struct PairingGrantDestination: Hashable {
     let url: URL
     let displayName: String
+}
+
+struct ErrorDestination: Hashable {
+    let message: String
+}
+
+struct ErrorDestinationView: View {
+    let message: String
+    @EnvironmentObject var errorState: ErrorStateStore
+    
+    var body: some View {
+        TerminalStateView(
+            icon: "xmark.circle.fill",
+            iconColor: .red,
+            title: "Connection Error",
+            message: message,
+            buttonTitle: "Back",
+            action: {
+                errorState.clearError()
+            }
+        )
+    }
+}
+
+final class ErrorStateStore: ObservableObject {
+    @Published var errorMessage: String? = nil
+    
+    func showError(_ message: String) {
+        errorMessage = message
+    }
+    
+    func clearError() {
+        errorMessage = nil
+    }
 }
 
 struct TailnetJoinDestination: Hashable {

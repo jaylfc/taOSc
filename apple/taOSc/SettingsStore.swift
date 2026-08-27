@@ -31,7 +31,7 @@ final class SettingsStore: ObservableObject {
     }
 
     func logout() throws {
-        try KeychainStore.shared.deleteToken()
         serverURL = ""
+        try KeychainStore.shared.deleteToken()
     }
 }
