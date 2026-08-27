@@ -4,30 +4,31 @@ struct TaOSgoEntryView: View {
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var deviceName: String = ""
-    @State private var viewModel: TaOSgoJoinViewModel?
+    @State private var viewModel: TaOSgoJoinViewModel
     @Environment(\.dismiss) private var dismiss
     var onJoinResponse: (TaOSgoJoinResponse) -> Void
 
+    init(onJoinResponse: @escaping (TaOSgoJoinResponse) -> Void) {
+        self._viewModel = State(wrappedValue: TaOSgoJoinViewModel())
+        self.onJoinResponse = onJoinResponse
+    }
+
     var body: some View {
         Group {
-            if let viewModel = viewModel {
-                switch viewModel.phase {
-                case .joining:
-                    ProgressView("Signing in...")
-                case .noInstance:
-                    TaOSgoNoInstanceView {
-                        viewModel.phase = .idle
-                    }
-                case .tailnetJoin(let joinKey, let loginServer, let hosts):
-                    EmptyView()
-                case .error(let message):
-                    ErrorRetryView(message: message) {
-                        viewModel.join()
-                    }
-                case .idle:
-                    taOSgoForm
+            switch viewModel.phase {
+            case .joining:
+                ProgressView("Signing in...")
+            case .noInstance:
+                TaOSgoNoInstanceView {
+                    viewModel.phase = .idle
                 }
-            } else {
+            case .tailnetJoin(let joinKey, let loginServer, let hosts):
+                ProgressView()
+            case .error(let error):
+                ErrorRetryView(message: error.localizedDescription) {
+                    viewModel.join()
+                }
+            case .idle:
                 taOSgoForm
             }
         }
@@ -40,7 +41,7 @@ struct TaOSgoEntryView: View {
                 }
             }
         }
-        .onChange(of: viewModel?.phase) { _, newPhase in
+        .onReceive(viewModel.$phase) { newPhase in
             if case .tailnetJoin(let joinKey, let loginServer, let hosts) = newPhase {
                 let response = TaOSgoJoinResponse(
                     join_key: joinKey,
@@ -51,7 +52,7 @@ struct TaOSgoEntryView: View {
             }
         }
         .onDisappear {
-            viewModel?.phase = .idle
+            viewModel.phase = .idle
         }
     }
 
@@ -70,13 +71,10 @@ struct TaOSgoEntryView: View {
             }
 
             Button("Sign In") {
-                let vm = TaOSgoJoinViewModel(
-                    email: email,
-                    password: password,
-                    deviceName: deviceName.isEmpty ? nil : deviceName
-                )
-                self.viewModel = vm
-                vm.join()
+                viewModel.email = email
+                viewModel.password = password
+                viewModel.deviceName = deviceName.isEmpty ? nil : deviceName
+                viewModel.join()
             }
             .disabled(email.isEmpty || password.isEmpty)
         }
