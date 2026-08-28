@@ -24,7 +24,10 @@ final class TaOSgoJoinViewModel: ObservableObject {
         self.phase = .idle
     }
 
-    func join() {
+    func join(email: String, password: String, deviceName: String?) {
+        self.email = email
+        self.password = password
+        self.deviceName = deviceName
         joinTask?.cancel()
         phase = .joining
         joinTask = Task { @MainActor in

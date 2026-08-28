@@ -26,7 +26,11 @@ struct TaOSgoEntryView: View {
                 ProgressView()
             case .error(let error):
                 ErrorRetryView(message: error.localizedDescription) {
-                    viewModel.join()
+                    viewModel.join(
+                        email: email,
+                        password: password,
+                        deviceName: deviceName.isEmpty ? nil : deviceName
+                    )
                 }
             case .idle:
                 taOSgoForm
@@ -71,10 +75,11 @@ struct TaOSgoEntryView: View {
             }
 
             Button("Sign In") {
-                viewModel.email = email
-                viewModel.password = password
-                viewModel.deviceName = deviceName.isEmpty ? nil : deviceName
-                viewModel.join()
+                viewModel.join(
+                    email: email,
+                    password: password,
+                    deviceName: deviceName.isEmpty ? nil : deviceName
+                )
             }
             .disabled(email.isEmpty || password.isEmpty)
         }
