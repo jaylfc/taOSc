@@ -1,36 +1,45 @@
 import Foundation
 
+@MainActor
 final class TaOSgoJoinViewModel: ObservableObject {
     @Published var phase: Phase
 
-    enum Phase: Equatable {
+    enum Phase {
         case idle
         case joining
         case noInstance
         case tailnetJoin(joinKey: String, loginServer: String, hosts: [TaOSgoHost])
-        case error(String)
+        case error(Error)
     }
 
-    private let email: String
-    private let password: String
-    private let deviceName: String?
+    private var email: String
+    private var password: String
+    private var deviceName: String?
+    private var joinTask: Task<Void, Never>?
 
-    init(email: String, password: String, deviceName: String?) {
+    init(email: String = "", password: String = "", deviceName: String? = nil) {
         self.email = email
         self.password = password
         self.deviceName = deviceName
-        self.phase = .joining
+        self.phase = .idle
     }
 
-    func join() {
+    func join(email: String, password: String, deviceName: String?) {
+        self.email = email
+        self.password = password
+        self.deviceName = deviceName
+        joinTask?.cancel()
         phase = .joining
-        Task { @MainActor in
+        joinTask = Task { @MainActor in
             do {
                 let response = try await PairingService.taOSgoJoin(
                     email: email,
                     password: password,
                     deviceName: deviceName
                 )
+                guard !response.join_key.isEmpty, !response.login_server.isEmpty else {
+                    throw PairingError.invalidResponse
+                }
                 if response.hosts.isEmpty {
                     phase = .noInstance
                 } else {
@@ -41,7 +50,7 @@ final class TaOSgoJoinViewModel: ObservableObject {
                     )
                 }
             } catch {
-                phase = .error(error.localizedDescription)
+                phase = .error(error)
             }
         }
     }

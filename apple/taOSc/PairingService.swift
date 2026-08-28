@@ -18,7 +18,7 @@ enum PairingService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
             throw PairingError.unreachable
         }
         return try JSONDecoder().decode(PairRequestResponse.self, from: data)
@@ -74,7 +74,7 @@ enum PairingService {
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+        guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
             throw PairingError.unreachable
         }
         return try JSONDecoder().decode(TaOSgoJoinResponse.self, from: data)

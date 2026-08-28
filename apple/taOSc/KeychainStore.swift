@@ -45,7 +45,10 @@ final class KeychainStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: tokenKey
         ]
-        SecItemDelete(query as CFDictionary)
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unhandled(status)
+        }
     }
 }
 

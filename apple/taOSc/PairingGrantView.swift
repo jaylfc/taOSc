@@ -5,6 +5,7 @@ final class PairingGrantViewModel: ObservableObject {
     private let baseURL: URL
     private let displayName: String
     private var pollTask: Task<Void, Never>?
+    private var hasStarted = false
 
     enum Phase: Equatable {
         case creating
@@ -22,7 +23,8 @@ final class PairingGrantViewModel: ObservableObject {
     }
 
     func start() {
-        guard phase == .creating else { return }
+        guard phase == .creating, !hasStarted else { return }
+        hasStarted = true
         pollTask?.cancel()
         pollTask = Task { @MainActor in
             do {
@@ -33,6 +35,8 @@ final class PairingGrantViewModel: ObservableObject {
                 )
                 self.phase = .pending(verifyCode: response.verify_code)
                 await poll(requestId: response.pair_request_id)
+            } catch is CancellationError {
+                // Task was cancelled; do not change phase.
             } catch {
                 self.phase = .unreachable(error.localizedDescription)
             }
@@ -41,6 +45,10 @@ final class PairingGrantViewModel: ObservableObject {
 
     func cancel() {
         pollTask?.cancel()
+    }
+
+    func reset() {
+        hasStarted = false
     }
 
     deinit {
@@ -56,7 +64,7 @@ final class PairingGrantViewModel: ObservableObject {
                 )
                 switch status {
                 case .pending:
-                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    try await Task.sleep(nanoseconds: 3_000_000_000)
                 case .approved(let token):
                     do {
                         try KeychainStore.shared.saveToken(token)
@@ -72,6 +80,8 @@ final class PairingGrantViewModel: ObservableObject {
                     self.phase = .expired
                     return
                 }
+            } catch is CancellationError {
+                return
             } catch {
                 self.phase = .unreachable(error.localizedDescription)
                 return
@@ -84,6 +94,7 @@ struct PairingGrantView: View {
     @StateObject private var viewModel: PairingGrantViewModel
     let onComplete: () -> Void
     let onDismiss: () -> Void
+    @State private var hasCompleted = false
 
     init(baseURL: URL, displayName: String, onComplete: @escaping () -> Void, onDismiss: @escaping () -> Void) {
         _viewModel = StateObject(wrappedValue: PairingGrantViewModel(
@@ -109,7 +120,10 @@ struct PairingGrantView: View {
             case .approved:
                 ProgressView("Pairing approved. Opening...")
                     .onAppear {
-                        onComplete()
+                        if !hasCompleted {
+                            hasCompleted = true
+                            onComplete()
+                        }
                     }
 
             case .denied:
@@ -135,6 +149,7 @@ struct PairingGrantView: View {
             case .unreachable(let message):
                 ErrorRetryView(message: message) {
                     viewModel.phase = .creating
+                    viewModel.reset()
                     viewModel.start()
                 }
             }
