@@ -1,1 +1,6 @@
-apple/taOSc.xcodeproj/
+android/build/
+android/app/build/
+.gradle/
+*.iml
+.idea/
+local.properties

@@ -18,6 +18,7 @@ not build in CI either.
 A PR must satisfy:
 
 - build-test (`swift-build.yml`)
+- android-build (`android-build.yml`)
 - secret-scan (`secret-scan.yml`)
 - secret-scan-selftest (`secret-scan.yml`, the self-test must FIND the fixtures under `ci/fixtures/secret-scan/`)
 - markdownlint (`lint.yml`)
