@@ -1,6 +1,7 @@
 package com.taosc.taosc
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -15,8 +16,19 @@ import androidx.compose.ui.viewinterop.AndroidView
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        val prefs = getSharedPreferences("taosc_settings", Context.MODE_PRIVATE)
+        val settingsStore = SettingsStore(prefs)
+        val credentialStore = EncryptedCredentialStore.create(this)
+        
+        val url = if (settingsStore.hasServerUrl && settingsStore.isPaired(credentialStore)) {
+            settingsStore.serverUrl
+        } else {
+            ""
+        }
+        
         setContent {
-            WebViewScreen(url = Config.PLACEHOLDER_CANVAS_URL)
+            WebViewScreen(url = url)
         }
     }
 }
