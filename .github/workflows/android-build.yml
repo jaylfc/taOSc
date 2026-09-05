@@ -6,8 +6,11 @@ on:
   pull_request:
 
 jobs:
-  build-test:
+  android-build-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17

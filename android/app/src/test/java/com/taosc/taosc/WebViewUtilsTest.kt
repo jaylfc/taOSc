@@ -24,4 +24,19 @@ class WebViewUtilsTest {
     fun `empty url is invalid`() {
         assertFalse(WebViewUtils.isHttpUrl(""))
     }
+
+    @Test
+    fun `file url is invalid`() {
+        assertFalse(WebViewUtils.isHttpUrl("file:///path/to/file"))
+    }
+
+    @Test
+    fun `javascript url is invalid`() {
+        assertFalse(WebViewUtils.isHttpUrl("javascript:alert('xss')"))
+    }
+
+    @Test
+    fun `data url is invalid`() {
+        assertFalse(WebViewUtils.isHttpUrl("data:text/html,<h1>Hello</h1>"))
+    }
 }
