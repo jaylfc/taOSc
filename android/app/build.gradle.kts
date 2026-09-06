@@ -47,7 +47,14 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.8.0")
+    implementation(libs.security.crypto)
     testImplementation("junit:junit:4.13.2")
+    // org.json ships in android.jar as an unimplemented stub, so JSONObject throws
+    // "not mocked" in JVM unit tests. Put a real implementation on the unit-test
+    // classpath; the device still uses the platform's own org.json at runtime.
+    // Deliberately NOT unitTests.returnDefaultValues = true - that would make the
+    // stubs return nulls and the parsing tests would pass without parsing anything.
+    testImplementation("org.json:json:20231013")
 }
 
 tasks.withType<Test> {
