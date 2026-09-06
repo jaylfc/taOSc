@@ -2,6 +2,7 @@ package com.taosc.taosc
 
 import java.net.HttpURLConnection
 import java.net.URL
+import org.json.JSONObject
 
 interface HttpClient {
     fun post(url: String, body: String, headers: Map<String, String> = emptyMap()): HttpResponse
@@ -61,9 +62,15 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
             throw PairingError.Unreachable
         }
         
+        val json = try {
+            JSONObject(response.body)
+        } catch (e: org.json.JSONException) {
+            throw PairingError.InvalidResponse
+        }
+        
         return PairRequestResponse(
-            pairRequestId = Json.requireString(response.body, "pair_request_id"),
-            verifyCode = Json.requireString(response.body, "verify_code")
+            pairRequestId = json.optString("pair_request_id").ifEmpty { null } ?: throw PairingError.InvalidResponse,
+            verifyCode = json.optString("verify_code").ifEmpty { null } ?: throw PairingError.InvalidResponse
         )
     }
     
@@ -73,10 +80,15 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
         
         when (response.code) {
             200 -> {
+                val json = try {
+                    JSONObject(response.body)
+                } catch (e: org.json.JSONException) {
+                    throw PairingError.InvalidResponse
+                }
                 val pollResponse = PairRequestPollResponse(
-                    id = Json.requireString(response.body, "id"),
-                    status = Json.requireString(response.body, "status"),
-                    scopedToken = Json.optNullableString(response.body, "scoped_token")
+                    id = json.optString("id").ifEmpty { null } ?: throw PairingError.InvalidResponse,
+                    status = json.optString("status").ifEmpty { null } ?: throw PairingError.InvalidResponse,
+                    scopedToken = if (json.isNull("scoped_token")) null else json.optString("scoped_token").ifEmpty { null }
                 )
                 return pollResponse.requestStatus ?: throw PairingError.InvalidResponse
             }
@@ -91,19 +103,6 @@ private object Json {
         return pairs.joinToString(prefix = "{", postfix = "}") { (key, value) ->
             "\"${escape(key)}\":\"${escape(value)}\""
         }
-    }
-    
-    fun requireString(body: String, key: String): String {
-        val pattern = """"$key"\s*:\s*"([^"]*)""".toRegex()
-        return pattern.find(body)?.groupValues?.get(1)
-            ?: throw PairingError.InvalidResponse
-    }
-    
-    fun optNullableString(body: String, key: String): String? {
-        val pattern = """"$key"\s*:\s*(?:"([^"]*)"|null)""".toRegex()
-        val match = pattern.find(body) ?: return null
-        val value = match.groupValues[1]
-        return if (value.isEmpty()) null else value
     }
     
     private fun escape(str: String): String {

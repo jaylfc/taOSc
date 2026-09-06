@@ -1,10 +1,13 @@
+// Interface-contract tests for CredentialStore. A JVM unit test cannot reach the
+// Android Keystore, so these tests validate the interface contract against a
+// reference implementation rather than the real EncryptedCredentialStore.
 package com.taosc.taosc
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-class CredentialStoreTest {
+class CredentialStoreContractTest {
     @Test
     fun `save and read token`() {
         val store = FakeCredentialStore()
