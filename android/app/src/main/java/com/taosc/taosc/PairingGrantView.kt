@@ -9,6 +9,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,15 +54,15 @@ fun PairingGrantScreen(
                         credentialStore.saveToken(status.scopedToken)
                         phase = PairingPhase.Approved
                         onComplete()
-                        return@launch
+                        return@LaunchedEffect
                     }
                     PairRequestStatus.Denied -> {
                         phase = PairingPhase.Denied
-                        return@launch
+                        return@LaunchedEffect
                     }
                     PairRequestStatus.Expired -> {
                         phase = PairingPhase.Expired
-                        return@launch
+                        return@LaunchedEffect
                     }
                 }
             }
