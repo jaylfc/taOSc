@@ -51,7 +51,7 @@ class PairingServiceTest {
             )
         ))
         val service = PairingService(client)
-        assertEquals(PairRequestStatus.Approved("token-abc"), service.pollPairRequest("https://example.com", "req-123"))
+        assertEquals(PairRequestStatus.Approved("token-abc", "req-123"), service.pollPairRequest("https://example.com", "req-123"))
     }
     
     @Test
@@ -125,6 +125,26 @@ class PairingServiceTest {
         val service = PairingService(client)
         assertThrows(PairingError.InvalidResponse::class.java) {
             service.pollPairRequest("https://example.com", "req-123")
+        }
+    }
+    
+    @Test
+    fun `updatePushToken posts to correct endpoint`() {
+        val client = FakeHttpClient(mutableMapOf(
+            "https://example.com/api/devices/device-123/push-token" to HttpResponse(200, "{}")
+        ))
+        val service = PairingService(client)
+        service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
+    }
+    
+    @Test
+    fun `updatePushToken throws on non-2xx`() {
+        val client = FakeHttpClient(mutableMapOf(
+            "https://example.com/api/devices/device-123/push-token" to HttpResponse(500, "")
+        ))
+        val service = PairingService(client)
+        assertThrows(PairingError.Unreachable::class.java) {
+            service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
         }
     }
 }

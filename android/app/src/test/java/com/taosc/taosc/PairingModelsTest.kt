@@ -22,7 +22,7 @@ class PairingModelsTest {
             status = "approved",
             scopedToken = "token-abc"
         )
-        assertEquals(PairRequestStatus.Approved("token-abc"), response.requestStatus)
+        assertEquals(PairRequestStatus.Approved("token-abc", "req-123"), response.requestStatus)
     }
     
     @Test

@@ -96,6 +96,22 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
             else -> throw PairingError.Unreachable
         }
     }
+    
+    fun updatePushToken(baseUrl: String, deviceId: String, pushToken: String, scopedToken: String) {
+        val url = "$baseUrl/api/devices/$deviceId/push-token"
+        val body = Json.buildObject(
+            "push_token" to pushToken
+        )
+        
+        val response = httpClient.post(url, body, mapOf(
+            "Content-Type" to "application/json",
+            "Authorization" to "Bearer $scopedToken"
+        ))
+        
+        if (response.code !in 200..299) {
+            throw PairingError.Unreachable
+        }
+    }
 }
 
 private object Json {

@@ -13,7 +13,7 @@ data class PairRequestPollResponse(
     val requestStatus: PairRequestStatus?
         get() = when (status.lowercase()) {
             "pending" -> PairRequestStatus.Pending
-            "approved" -> scopedToken?.let { PairRequestStatus.Approved(it) }
+            "approved" -> scopedToken?.let { PairRequestStatus.Approved(it, id) }
             "denied" -> PairRequestStatus.Denied
             "expired" -> PairRequestStatus.Expired
             else -> null
@@ -22,7 +22,7 @@ data class PairRequestPollResponse(
 
 sealed class PairRequestStatus {
     data object Pending : PairRequestStatus()
-    data class Approved(val scopedToken: String) : PairRequestStatus()
+    data class Approved(val scopedToken: String, val deviceId: String) : PairRequestStatus()
     data object Denied : PairRequestStatus()
     data object Expired : PairRequestStatus()
 }

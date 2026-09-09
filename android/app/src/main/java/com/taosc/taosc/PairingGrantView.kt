@@ -52,6 +52,7 @@ fun PairingGrantScreen(
                     PairRequestStatus.Pending -> delay(3000)
                     is PairRequestStatus.Approved -> {
                         credentialStore.saveToken(status.scopedToken)
+                        settingsStore.deviceId = status.deviceId
                         phase = PairingPhase.Approved
                         onComplete()
                         return@LaunchedEffect
