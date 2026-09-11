@@ -11,7 +11,8 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - taOSc
-    entitlements: taOSc.entitlements
+    entitlements:
+      path: taOSc.entitlements
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.jaylfc.taOSc
       GENERATE_INFOPLIST_FILE: NO
@@ -19,9 +20,6 @@ targets:
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       SWIFT_VERSION: "5.0"
       CODE_SIGN_STYLE: Automatic
-    capability:
-      - background-modes
-      - push-notifications
     scheme:
       testTargets:
         - taOScTests

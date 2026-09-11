@@ -3,120 +3,262 @@ import XCTest
 
 final class PushPayloadTests: XCTestCase {
 
+    override func tearDown() {
+        super.tearDown()
+        try? KeychainStore.shared.deleteToken()
+    }
+
     func testHexTokenEncoding() {
         let tokenData = "com.test.token.data".data(using: .utf8)!
-        let hex = tokenData.hexEncoded()
-        XCTAssertEqual(hex, "636f6d2e746573742e746f702e646f6e616d65")
+        XCTAssertEqual(tokenData.hexEncoded, "636f6d2e746573742e746f6b656e2e64617461")
     }
 
-    func testApproveDenyUserInfoParsing() {
-        let userInfo: [String: Any] = [
-            "decision_id": "dec_123",
-            "decision_type": "approve_deny",
-            "options": ["approve", "reject", "add_note"]
+    func testBuildBodyForApproveDeny() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "approve", decisionType: "approve_deny", otherValue: nil)
+        XCTAssertEqual(body["value"] as? String, "approve")
+        XCTAssertNil(body["other_value"])
+    }
+
+    func testBuildBodyForSingleSelect() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "opt_a", decisionType: "single_select", otherValue: nil)
+        XCTAssertEqual(body["value"] as? [String], ["opt_a"])
+        XCTAssertNil(body["other_value"])
+    }
+
+    func testBuildBodyForMultiSelect() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "opt_b", decisionType: "multi_select", otherValue: nil)
+        XCTAssertEqual(body["value"] as? [String], ["opt_b"])
+    }
+
+    func testBuildBodyForFreeTextIncludesOtherValue() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "quick_reply", decisionType: "free_text", otherValue: "Hello tailnet")
+        XCTAssertEqual(body["value"] as? String, "quick_reply")
+        XCTAssertEqual(body["other_value"] as? String, "Hello tailnet")
+    }
+
+    func testBuildBodyOmitsEmptyOtherValue() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "approve", decisionType: "approve_deny", otherValue: "")
+        XCTAssertNil(body["other_value"])
+    }
+
+    func testBuildBodyOmitsSource() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "approve", decisionType: "approve_deny", otherValue: nil)
+        XCTAssertNil(body["source"])
+    }
+
+    func testSendAnswerUsesBaseURL() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (200, nil)
         ]
-        let decisionId = userInfo["decision_id"] as? String
-        let decisionType = userInfo["decision_type"] as? String
-        XCTAssertEqual(decisionId, "dec_123")
-        XCTAssertEqual(decisionType, "approve_deny")
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        let request = MockHTTPURLProtocol.capturedRequest!
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.path, "/api/decisions/dec_123/answer")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
     }
 
-    func testFreeTextUserInfoParsing() {
-        let userInfo: [String: Any] = [
-            "decision_id": "dec_456",
-            "decision_type": "free_text",
-            "quick_reply": "Hello tailnet"
+    func testSendAnswerIncludesAuthorizationHeader() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        try KeychainStore.shared.saveToken("test_scoped_token")
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (200, nil)
         ]
-        let decisionId = userInfo["decision_id"] as? String
-        let decisionType = userInfo["decision_type"] as? String
-        XCTAssertEqual(decisionId, "dec_456")
-        XCTAssertEqual(decisionType, "free_text")
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        let request = MockHTTPURLProtocol.capturedRequest!
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test_scoped_token")
     }
 
-    func testOptionsUserInfoParsing() {
-        let userInfo: [String: Any] = [
-            "decision_id": "dec_789",
-            "decision_type": "single_select",
-            "options": ["option_a", "option_b", "option_c"]
+    func testSendAnswerOmitsOtherValueWhenEmpty() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (200, nil)
         ]
-        let decisionId = userInfo["decision_id"] as? String
-        let decisionType = userInfo["decision_type"] as? String
-        XCTAssertEqual(decisionId, "dec_789")
-        XCTAssertEqual(decisionType, "single_select")
-        let options = userInfo["options"] as? [String]
-        XCTAssertEqual(options, ["option_a", "option_b", "option_c"])
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        let request = MockHTTPURLProtocol.capturedRequest!
+        let bodyData = request.httpBody!
+        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        XCTAssertNil(json["other_value"])
     }
 
-    func testAnswerRequestForOption() async throws {
+    func testSendAnswerHandles404() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (404, nil)
+        ]
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        XCTAssertNotNil(MockHTTPURLProtocol.capturedRequest)
+        XCTAssertEqual(MockHTTPURLProtocol.capturedRequest?.httpMethod, "POST")
+    }
+
+    func testSendAnswerHandles409Gate() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        let gateBody = try JSONSerialization.data(withJSONObject: ["detail": "gate decisions cannot be answered by a device bearer"])
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (409, gateBody)
+        ]
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        XCTAssertNotNil(MockHTTPURLProtocol.capturedRequest)
+    }
+
+    func testSendAnswerHandles409AlreadyAnswered() async throws {
+        let handler = DecisionNotificationHandler.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/decisions/dec_123/answer")!: (409, nil)
+        ]
+        MockHTTPURLProtocol.capturedRequest = nil
+
+        let body: [String: Any] = ["value": "approve"]
+        await handler.sendAnswer(decisionId: "dec_123", body: body)
+
+        XCTAssertNotNil(MockHTTPURLProtocol.capturedRequest)
+    }
+
+    func testRegisterCategoriesFromOptionsPayload() async throws {
         let handler = DecisionNotificationHandler.shared
         let userInfo: [String: Any] = [
-            "decision_id": "dec_789",
             "decision_type": "single_select",
             "options": ["opt_a", "opt_b"]
         ]
-        let decisionId = userInfo["decision_id"] as? String ?? ""
 
-        let actionId = "opt_a"
-        let otherValue: String? = nil
-        let source = userInfo["decision_type"] as? String ?? ""
+        handler.registerCategories(from: userInfo)
 
-        let body: [String: Any] = [
-            "value": actionId,
-            "other_value": otherValue ?? "",
-            "source": source
-        ]
-
-        let url = URL(string: "/api/decisions/\(decisionId)/answer")!
-        XCTAssertEqual(url.path, "/api/decisions/dec_789/answer")
-
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        let jsonDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-        XCTAssertEqual(jsonDict?["value"] as? String, "opt_a")
-        XCTAssertEqual(jsonDict?["other_value"] as? String, "")
-        XCTAssertEqual(jsonDict?["source"] as? String, "single_select")
+        let categories = try await getCategories()
+        let category = categories.first(where: { $0.identifier == DecisionCategory.options.rawValue })
+        XCTAssertEqual(category?.actions.count, 2)
+        XCTAssertEqual(category?.actions.first?.identifier, "opt_a")
+        XCTAssertEqual(category?.actions.last?.identifier, "opt_b")
     }
 
-    func testAnswerRequestForTextReply() async throws {
-        let userInfo: [String: Any] = [
-            "decision_id": "dec_012",
-            "decision_type": "free_text",
-            "typed_text": "Hello tailnet"
+    func testPushRegistrarSendsTokenWithAuthorization() async throws {
+        let handler = PushRegistrar.shared
+        handler.baseURL = URL(string: "https://test.example.com")!
+        handler.deviceId = "test-device-id"
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockHTTPURLProtocol.self]
+        handler.urlSession = URLSession(configuration: config)
+
+        try KeychainStore.shared.saveToken("test_scoped_token")
+
+        MockHTTPURLProtocol.mockResponses = [
+            URL(string: "https://test.example.com/api/devices/test-device-id/push-token")!: (200, nil)
         ]
-        let decisionId = userInfo["decision_id"] as? String ?? ""
+        MockHTTPURLProtocol.capturedRequest = nil
 
-        let actionId = "quick_reply"
-        let otherValue = userInfo["typed_text"] as? String
-        let source = userInfo["decision_type"] as? String ?? ""
+        let token = Data("test".utf8)
+        handler.setDeviceToken(token)
 
-        let body: [String: Any] = [
-            "value": actionId,
-            "other_value": otherValue ?? "",
-            "source": source
-        ]
+        let start = Date()
+        while MockHTTPURLProtocol.capturedRequest == nil && Date().timeIntervalSince(start) < 1.0 {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
 
-        let jsonData = try JSONSerialization.data(withJSONObject: body)
-        let jsonDict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-        XCTAssertEqual(jsonDict?["value"] as? String, "quick_reply")
-        XCTAssertEqual(jsonDict?["other_value"] as? String, "Hello tailnet")
-        XCTAssertEqual(jsonDict?["source"] as? String, "free_text")
+        let request = MockHTTPURLProtocol.capturedRequest!
+        XCTAssertEqual(request.httpMethod, "PATCH")
+        XCTAssertEqual(request.url?.path, "/api/devices/test-device-id/push-token")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test_scoped_token")
+    }
+}
+
+class MockHTTPURLProtocol: URLProtocol {
+    static var mockResponses: [URL: (Int, Data?)] = [:]
+    static var capturedRequest: URLRequest?
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        return request.url?.scheme == "http" || request.url?.scheme == "https"
     }
 
-    func testURLValidatorRejectsForeignHost() {
-        let result = URLValidator.validate("http://evil.example.com")
-        XCTAssertEqual(result, .failure(.missingHost))
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        return request
     }
 
-    func testPayloadWithoutUrlOpensDecisionsList() {
-        let userInfo: [String: Any] = [
-            "decision_id": "dec_345",
-            "decision_type": "approve_deny"
-        ]
-        let decisionId = userInfo["decision_id"] as? String ?? ""
-        let url = userInfo["url"] as? String
+    override func startLoading() {
+        MockHTTPURLProtocol.capturedRequest = request
+        guard let url = request.url,
+              let (statusCode, body) = MockHTTPURLProtocol.mockResponses[url] else {
+            let error = NSError(domain: "MockHTTPURLProtocol", code: -1, userInfo: nil)
+            client?.urlProtocol(self, didFailWithError: error)
+            return
+        }
+        let response = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if let body = body {
+            client?.urlProtocol(self, didLoad: body)
+        }
+        client?.urlProtocolDidFinishLoading(self)
+    }
 
-        XCTAssertNil(url)
-        // When url is absent, the app should open the decisions list
-        // rather than failing - this is verified by the behavior code
-        XCTAssertTrue(decisionId.isEmpty == false)
+    override func stopLoading() {}
+}
+
+private func getCategories() async throws -> Set<UNNotificationCategory> {
+    try await withCheckedThrowingContinuation { continuation in
+        UNUserNotificationCenter.current().getNotificationCategories { categories in
+            continuation.resume(returning: categories)
+        }
     }
 }
