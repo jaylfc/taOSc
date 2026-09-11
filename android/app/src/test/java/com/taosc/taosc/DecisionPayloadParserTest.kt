@@ -20,6 +20,26 @@ class DecisionPayloadParserTest {
     }
     
     @Test
+    fun `parse payload with explicit actions list`() {
+        val json = """{"title":"Decision with custom actions","body":"Custom","data":{"decision_type":"approve_deny","decision_id":"dec-1"}, "actions":[{"id":"custom_approve","label":"Custom Approve"},{"id":"custom_deny","label":"Custom Deny"}]}"""
+        val payload = DecisionPayloadParser.parse(json)
+        
+        assertEquals("Decision with custom actions", payload?.title)
+        assertEquals(2, payload?.actions?.size)
+        // Should contain the custom actions from the root-level actions list, not the derived approve_deny actions
+        assertEquals(DecisionAction.Pick("custom_approve", "Custom Approve"), payload?.actions?.get(0))
+        assertEquals(DecisionAction.Pick("custom_deny", "Custom Deny"), payload?.actions?.get(1))
+    }
+    
+    @Test
+    fun `parse payload with image at root level`() {
+        val json = """{"title":"Decision","body":"Test","data":{"decision_type":"approve_deny","decision_id":"dec-1"}, "image":"https://example.com/img.png"}"""
+        val payload = DecisionPayloadParser.parse(json)
+        
+        assertEquals("https://example.com/img.png", payload?.image)
+    }
+    
+    @Test
     fun `parse single_select payload returns pick actions`() {
         val json = """{"title":"Pick one","body":"Choose","data":{"decision_type":"single_select","decision_id":"dec-2","options":[{"label":"A","value":"a"},{"label":"B","value":"b"}]}}"""
         val payload = DecisionPayloadParser.parse(json)
@@ -59,13 +79,5 @@ class DecisionPayloadParserTest {
     fun `parse malformed json returns null`() {
         val payload = DecisionPayloadParser.parse("{not valid json")
         assertNull(payload)
-    }
-    
-    @Test
-    fun `parse payload with image`() {
-        val json = """{"title":"T","body":"B","data":{"decision_type":"approve_deny","decision_id":"dec-5","image":"https://example.com/img.png"}}"""
-        val payload = DecisionPayloadParser.parse(json)
-        
-        assertEquals("https://example.com/img.png", payload?.image)
     }
 }

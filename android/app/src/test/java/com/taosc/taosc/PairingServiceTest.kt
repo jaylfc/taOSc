@@ -1,7 +1,9 @@
 package com.taosc.taosc
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PairingServiceTest {
@@ -129,23 +131,62 @@ class PairingServiceTest {
     }
     
     @Test
-    fun `updatePushToken posts to correct endpoint`() {
-        val client = FakeHttpClient(mutableMapOf(
+    fun `updatePushToken uses PATCH method`() {
+        val client = object : FakeHttpClient(mutableMapOf(
             "https://example.com/api/devices/device-123/push-token" to HttpResponse(200, "{}")
-        ))
+        )) {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                throw AssertionError("POST should not be called for PATCH endpoint")
+            }
+            
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                throw AssertionError("GET should not be called for PATCH endpoint")
+            }
+            
+            fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                // Verify that the body contains push_token field
+                val json = org.json.JSONObject(body)
+                assertEquals("https://push.example.com/ep", json.getString("push_token"))
+                assertEquals("Bearer token-abc", headers["Authorization"])
+                return responses[url] ?: HttpResponse(500, "")
+            }
+        }
         val service = PairingService(client)
         service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
     }
     
     @Test
-    fun `updatePushToken throws on non-2xx`() {
-        val client = FakeHttpClient(mutableMapOf(
-            "https://example.com/api/devices/device-123/push-token" to HttpResponse(500, "")
-        ))
-        val service = PairingService(client)
-        assertThrows(PairingError.Unreachable::class.java) {
-            service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
+    fun `updatePushToken posts to correct endpoint`() {
+        var postCalled = false
+        var getCalled = false
+        var patchCalled = false
+        
+        val client = object : FakeHttpClient(mutableMapOf(
+            "https://example.com/api/devices/device-123/push-token" to HttpResponse(200, "{}")
+        )) {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                postCalled = true
+                return responses[url] ?: HttpResponse(500, "")
+            }
+            
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                getCalled = true
+                return responses[url] ?: HttpResponse(500, "")
+            }
+            
+            fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                patchCalled = true
+                return responses[url] ?: HttpResponse(500, "")
+            }
         }
+        
+        val service = PairingService(client)
+        service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
+        
+        assertFalse(postCalled, "POST should not be called for PATCH endpoint")
+        assertFalse(getCalled, "GET should not be called for PATCH endpoint")
+        assertTrue(patchCalled, "PATCH should be called for updatePushToken")
+    }
     }
 }
 

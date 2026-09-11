@@ -148,7 +148,7 @@ fun SettingsScreen(onUrlSet: (String) -> Unit) {
     
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center(),
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OutlinedTextField(

@@ -46,7 +46,7 @@ class UnifiedPushRegistrar(
         val intent = Intent(ACTION_REGISTER).apply {
             `package` = distributor
             putExtra(EXTRA_APP_ID, appId)
-            putExtra(EXTRA_MESSENGER, messenger.binder)
+            putExtra(EXTRA_MESSENGER, messenger)
         }
         broadcastSender(intent)
         return true
@@ -58,7 +58,7 @@ class UnifiedPushRegistrar(
         val intent = Intent(ACTION_UNREGISTER).apply {
             `package` = distributor
             putExtra(EXTRA_APP_ID, appId)
-            putExtra(EXTRA_MESSENGER, messenger.binder)
+            putExtra(EXTRA_MESSENGER, messenger)
         }
         broadcastSender(intent)
     }

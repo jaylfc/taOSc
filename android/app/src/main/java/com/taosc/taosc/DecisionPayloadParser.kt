@@ -13,8 +13,27 @@ object DecisionPayloadParser {
                 return null
             }
             
-            val actions = parseActions(decisionType, data)
-            val image = data.optString("image").ifEmpty { null }
+            // Check for explicit root-level actions first
+            val explicitActions = root.optJSONArray("actions")
+            val actions = if (explicitActions != null && explicitActions.length() > 0) {
+                // Parse explicit actions from root-level actions array
+                buildList(explicitActions.length()) {
+                    for (i in 0 until explicitActions.length()) {
+                        val actionObj = explicitActions.getJSONObject(i)
+                        val id = actionObj.optString("id")
+                        val label = actionObj.optString("label")
+                        if (id.isNotEmpty() || label.isNotEmpty()) {
+                            add(DecisionAction.Pick(id, label))
+                        }
+                    }
+                }
+            } else {
+                // Fall back to derivation from decisionType and data
+                parseActions(decisionType, data)
+            }
+            
+            // Read image from root level where server sets it
+            val image = root.optString("image").ifEmpty { null }
             
             DecisionPayload(
                 title = root.optString("title").ifEmpty { "taOS" },

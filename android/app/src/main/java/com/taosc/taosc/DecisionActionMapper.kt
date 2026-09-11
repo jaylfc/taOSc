@@ -23,7 +23,21 @@ object DecisionActionMapper {
             when (action) {
                 is DecisionAction.Approve -> put("value", "approve")
                 is DecisionAction.Deny -> put("value", "deny")
-                is DecisionAction.Pick -> put("value", action.value)
+                is DecisionAction.Pick -> {
+                    when (payload.decisionType) {
+                        "multi_select" -> {
+                            // For multi_select, accumulate all selected options into array
+                            val selectedOptions = payload.actions.filterIsInstance<DecisionAction.Pick>()
+                            // If the action being sent is a quick reply text, add it to the array
+                            val valueList = selectedOptions.map { it.value }.toMutableList()
+                            if (quickReplyText.isNotEmpty()) {
+                                valueList.add(quickReplyText)
+                            }
+                            put("value", valueList)
+                        }
+                        else -> put("value", action.value)  // single_select and other types
+                    }
+                }
                 is DecisionAction.QuickReply -> put("value", quickReplyText)
                 is DecisionAction.AddNote -> put("note", quickReplyText)
             }
