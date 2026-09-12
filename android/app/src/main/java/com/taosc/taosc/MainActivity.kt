@@ -89,10 +89,8 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 val latch = java.util.concurrent.CountDownLatch(1)
-                var endpoint: String? = null
                 
                 registrar.register(packageName) { ep ->
-                    endpoint = ep
                     latch.countDown()
                 }
                 

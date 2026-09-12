@@ -143,8 +143,7 @@ class PairingServiceTest {
                 throw AssertionError("GET should not be called for PATCH endpoint")
             }
             
-            fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
-                // Verify that the body contains push_token field
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
                 val json = org.json.JSONObject(body)
                 assertEquals("https://push.example.com/ep", json.getString("push_token"))
                 assertEquals("Bearer token-abc", headers["Authorization"])
@@ -174,7 +173,7 @@ class PairingServiceTest {
                 return responses[url] ?: HttpResponse(500, "")
             }
             
-            fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
                 patchCalled = true
                 return responses[url] ?: HttpResponse(500, "")
             }
@@ -183,19 +182,22 @@ class PairingServiceTest {
         val service = PairingService(client)
         service.updatePushToken("https://example.com", "device-123", "https://push.example.com/ep", "token-abc")
         
-        assertFalse(postCalled, "POST should not be called for PATCH endpoint")
-        assertFalse(getCalled, "GET should not be called for PATCH endpoint")
-        assertTrue(patchCalled, "PATCH should be called for updatePushToken")
-    }
+        assertFalse("POST should not be called for PATCH endpoint", postCalled)
+        assertFalse("GET should not be called for PATCH endpoint", getCalled)
+        assertTrue("PATCH should be called for updatePushToken", patchCalled)
     }
 }
 
-class FakeHttpClient(private val responses: MutableMap<String, HttpResponse> = mutableMapOf()) : HttpClient {
+open class FakeHttpClient(protected val responses: MutableMap<String, HttpResponse> = mutableMapOf()) : HttpClient {
     override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
         return responses[url] ?: HttpResponse(500, "")
     }
     
     override fun get(url: String, headers: Map<String, String>): HttpResponse {
+        return responses[url] ?: HttpResponse(500, "")
+    }
+    
+    override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
         return responses[url] ?: HttpResponse(500, "")
     }
 }

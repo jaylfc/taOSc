@@ -1,6 +1,7 @@
 package com.taosc.taosc
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DecisionActionMapperTest {
@@ -83,7 +84,7 @@ class DecisionActionMapperTest {
     @Test
     fun `add note action maps to correct outbound call`() {
         val call = DecisionActionMapper.toOutboundCall(
-            action = DecisionAction.AddNote("a note"),
+            action = DecisionAction.AddNote,
             payload = payload,
             baseUrl = baseUrl,
             deviceId = deviceId,
@@ -93,21 +94,19 @@ class DecisionActionMapperTest {
         
         assertEquals("POST", call?.method)
         assertEquals("$baseUrl/api/decisions/dec-1/answer", call?.url)
-        assertEquals("{\"note\":\"a note\"}", call?.body)
+        val bodyJson = org.json.JSONObject(call?.body)
+        assertEquals("a note", bodyJson.getString("value"))
+        assertEquals("a note", bodyJson.getString("note"))
     }
     
     @Test
-    fun `multi-select pick action maps to JSON array`() {
-        // Create a payload for multi_select with multiple pick actions
+    fun `multi-select pick action maps to JSON array with tapped value`() {
         val multiSelectPayload = DecisionPayload(
             title = "Decision",
             body = "Please decide",
             decisionType = "multi_select",
             decisionId = "dec-1",
-            actions = listOf(
-                DecisionAction.Pick("opt-1", "Option 1"),
-                DecisionAction.Pick("opt-2", "Option 2")
-            ),
+            actions = emptyList(),
             image = null,
             raw = emptyMap()
         )
@@ -122,13 +121,11 @@ class DecisionActionMapperTest {
         
         assertEquals("POST", call?.method)
         assertEquals("$baseUrl/api/decisions/dec-1/answer", call?.url)
-        // Should be a JSON array with all selected options (current implementation)
         val bodyJson = org.json.JSONObject(call?.body)
         assertTrue(bodyJson.has("value"))
         assertTrue(bodyJson.get("value") is org.json.JSONArray)
         val valueArray = bodyJson.getJSONArray("value")
-        assertEquals(2, valueArray.length())
+        assertEquals(1, valueArray.length())
         assertEquals("opt-1", valueArray.getString(0))
-        assertEquals("opt-2", valueArray.getString(1))
     }
 }
