@@ -123,7 +123,9 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
         var body: [String: Any] = [:]
 
         switch decisionType {
-        case "single_select", "multi_select":
+        case "single_select":
+            body["value"] = actionId
+        case "multi_select":
             body["value"] = [actionId]
         default:
             body["value"] = actionId

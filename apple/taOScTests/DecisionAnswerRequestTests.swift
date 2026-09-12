@@ -63,7 +63,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
         let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
-        XCTAssertEqual(json["value"] as? [String], ["opt_a"])
+        XCTAssertEqual(json["value"] as? String, "opt_a")
         XCTAssertNil(json["other_value"])
         XCTAssertNil(json["source"])
     }

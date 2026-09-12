@@ -7,7 +7,7 @@ struct taOScApp: App {
     @StateObject private var settings = SettingsStore()
     @StateObject private var errorState = ErrorStateStore()
 
-    @UIApplicationDelegateAdaptor private var appDelegate = taOScAppDelegate()
+    @UIApplicationDelegateAdaptor(taOScAppDelegate.self) private var appDelegate
 
     var body: some Scene {
         WindowGroup {
