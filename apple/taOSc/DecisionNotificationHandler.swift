@@ -19,6 +19,11 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
     static var baseURL: URL?
     private(set) var urlSession: URLSession = .shared
 
+    // Bridge from AnyHashable:Any to String:Any by filtering out non-String keys
+    private func bridgeUserInfo(from userInfo: [AnyHashable: Any]) -> [String: Any] {
+        return userInfo.compactMapValues { $0 }
+    }
+
     override init() {
         super.init()
     }
@@ -27,19 +32,19 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler:
                                 @escaping (UNNotificationPresentationOptions) -> Void) {
-        registerCategories(from: notification.request.content.userInfo)
+        registerCategories(from: bridgeUserInfo(from: notification.request.content.userInfo))
         completionHandler([.banner, .sound])
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let userInfo = response.notification.request.content.userInfo
+        let userInfo = bridgeUserInfo(from: response.notification.request.content.userInfo)
         let actionIdentifier = response.actionIdentifier
         let decisionId = userInfo["decision_id"] as? String ?? ""
         let decisionType = userInfo["decision_type"] as? String ?? ""
 
-        registerCategories(from: userInfo)
+        registerCategories(from: bridgeUserInfo(from: userInfo))
 
         if actionIdentifier == UNNotificationDefaultActionIdentifier {
             handleTapAction(userInfo: userInfo, decisionId: decisionId, decisionType: decisionType)
@@ -66,7 +71,7 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
                 let id = actionDict["id"] as? String ?? ""
                 let title = actionDict["title"] as? String ?? id
                 let requiresText = actionDict["requires_text"] as? Bool ?? false
-                let options: UNNotificationAction.Options = requiresText ? .isTextInputAllowed : []
+                let options: UNNotificationActionOptions = requiresText ? .isTextInputAllowed : []
                 actions.append(UNNotificationAction(identifier: id, title: title, options: options))
             }
         }
@@ -139,7 +144,7 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
     }
 
     func sendAnswer(decisionId: String, body: [String: Any]) async {
-        guard let baseURL = baseURL else { return }
+        guard let baseURL = Self.baseURL else { return }
 
         do {
             let url = baseURL.appendingPathComponent("api/decisions/\(decisionId)/answer")

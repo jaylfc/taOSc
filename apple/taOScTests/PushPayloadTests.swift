@@ -23,7 +23,7 @@ final class PushPayloadTests: XCTestCase {
     func testBuildBodyForSingleSelect() {
         let handler = DecisionNotificationHandler.shared
         let body = handler.buildBody(actionId: "opt_a", decisionType: "single_select", otherValue: nil)
-        XCTAssertEqual(body["value"] as? [String], ["opt_a"])
+        XCTAssertEqual(body["value"] as? String, "opt_a")
         XCTAssertNil(body["other_value"])
     }
 
