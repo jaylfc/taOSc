@@ -21,7 +21,11 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
 
     // Bridge from AnyHashable:Any to String:Any by filtering out non-String keys
     private func bridgeUserInfo(from userInfo: [AnyHashable: Any]) -> [String: Any] {
-        return userInfo.compactMapValues { $0 }
+        var out: [String: Any] = [:]
+        for (key, value) in userInfo {
+            if let key = key as? String { out[key] = value }
+        }
+        return out
     }
 
     override init() {
@@ -71,8 +75,15 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
                 let id = actionDict["id"] as? String ?? ""
                 let title = actionDict["title"] as? String ?? id
                 let requiresText = actionDict["requires_text"] as? Bool ?? false
-                let options: UNNotificationActionOptions = requiresText ? .isTextInputAllowed : []
-                actions.append(UNNotificationAction(identifier: id, title: title, options: options))
+                if requiresText {
+                    actions.append(UNTextInputNotificationAction(identifier: id,
+                                                                 title: title,
+                                                                 options: [],
+                                                                 textInputButtonTitle: "Send",
+                                                                 textInputPlaceholder: ""))
+                } else {
+                    actions.append(UNNotificationAction(identifier: id, title: title, options: []))
+                }
             }
         }
 
@@ -117,6 +128,13 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
             }
         }
 
+        if actionId == DecisionAction.addNote.rawValue {
+            if let note = otherValue, !note.isEmpty {
+                postNotification(title: "Note added", body: note)
+            }
+            return
+        }
+
         let body = buildBody(actionId: actionId, decisionType: decisionType, otherValue: otherValue)
 
         Task {
@@ -132,11 +150,18 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
             body["value"] = actionId
         case "multi_select":
             body["value"] = [actionId]
+        case "add_note":
+            break
+        case "quick_reply":
+            if let otherValue = otherValue, !otherValue.isEmpty {
+                body["value"] = otherValue
+            }
         default:
             body["value"] = actionId
         }
 
-        if let otherValue = otherValue, !otherValue.isEmpty {
+        if decisionType != "quick_reply" && decisionType != "add_note",
+           let otherValue = otherValue, !otherValue.isEmpty {
             body["other_value"] = otherValue
         }
 
@@ -168,8 +193,7 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
             case 404:
                 postNotification(title: "Not found", body: "This decision could not be found.")
             case 409:
-                if let data = data,
-                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let detail = json["detail"] as? String,
                    detail.contains("gate") {
                     postNotification(title: "Cannot answer", body: "Gate decisions cannot be answered by device.")

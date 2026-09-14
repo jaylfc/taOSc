@@ -33,11 +33,18 @@ final class PushPayloadTests: XCTestCase {
         XCTAssertEqual(body["value"] as? [String], ["opt_b"])
     }
 
-    func testBuildBodyForFreeTextIncludesOtherValue() {
+    func testBuildBodyForQuickReplySendsTextAsValue() {
         let handler = DecisionNotificationHandler.shared
         let body = handler.buildBody(actionId: "quick_reply", decisionType: "free_text", otherValue: "Hello tailnet")
-        XCTAssertEqual(body["value"] as? String, "quick_reply")
-        XCTAssertEqual(body["other_value"] as? String, "Hello tailnet")
+        XCTAssertEqual(body["value"] as? String, "Hello tailnet")
+        XCTAssertNil(body["other_value"])
+    }
+
+    func testBuildBodyForAddNoteReturnsEmptyBody() {
+        let handler = DecisionNotificationHandler.shared
+        let body = handler.buildBody(actionId: "add_note", decisionType: "free_text", otherValue: "A note")
+        XCTAssertNil(body["value"])
+        XCTAssertNil(body["other_value"])
     }
 
     func testBuildBodyOmitsEmptyOtherValue() {
