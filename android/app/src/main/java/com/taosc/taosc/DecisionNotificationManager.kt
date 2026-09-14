@@ -24,7 +24,9 @@ class DecisionNotificationManager(private val context: Context) {
     fun showDecisionNotification(payload: DecisionPayload) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
-        val actions = payload.actions.map { action ->
+        val actions = payload.actions
+        .filter { it !is DecisionAction.AddNote }
+        .map { action ->
             when (action) {
                 is DecisionAction.QuickReply -> {
                     val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
@@ -120,7 +122,6 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.Deny -> "deny"
             is DecisionAction.Pick -> "pick"
             is DecisionAction.QuickReply -> "quick_reply"
-            is DecisionAction.AddNote -> "add_note"
         }
     }
     
@@ -130,7 +131,6 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.Deny -> "Deny"
             is DecisionAction.Pick -> action.label
             is DecisionAction.QuickReply -> "Reply"
-            is DecisionAction.AddNote -> "Add note"
         }
     }
 }

@@ -19,30 +19,19 @@ object DecisionActionMapper {
     ): OutboundCall? {
         val decisionId = payload.decisionId ?: return null
         
-        val bodyJson = JSONObject().apply {
-            when (action) {
-                is DecisionAction.Approve -> put("value", "approve")
-                is DecisionAction.Deny -> put("value", "deny")
-                is DecisionAction.Pick -> {
-                    when (payload.decisionType) {
-                        "multi_select" -> {
-                            put("value", listOf(action.value))
-                        }
-                        else -> put("value", action.value)
+        when (action) {
+            is DecisionAction.AddNote -> return null
+            is DecisionAction.Approve -> put("value", "approve")
+            is DecisionAction.Deny -> put("value", "deny")
+            is DecisionAction.Pick -> {
+                when (payload.decisionType) {
+                    "multi_select" -> {
+                        put("value", JSONArray().put(action.value))
                     }
-                }
-                is DecisionAction.QuickReply -> put("value", quickReplyText)
-                is DecisionAction.AddNote -> {
-                    put("value", quickReplyText)
-                    put("note", quickReplyText)
+                    else -> put("value", action.value)
                 }
             }
-        }.toString()
-        
-        return OutboundCall(
-            url = "$baseUrl/api/decisions/$decisionId/answer",
-            method = "POST",
-            body = bodyJson
-        )
+            is DecisionAction.QuickReply -> put("value", quickReplyText)
+        }
     }
 }

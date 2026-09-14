@@ -92,11 +92,7 @@ class DecisionActionMapperTest {
             quickReplyText = "a note"
         )
         
-        assertEquals("POST", call?.method)
-        assertEquals("$baseUrl/api/decisions/dec-1/answer", call?.url)
-        val bodyJson = org.json.JSONObject(call?.body)
-        assertEquals("a note", bodyJson.getString("value"))
-        assertEquals("a note", bodyJson.getString("note"))
+        assertNull(call)
     }
     
     @Test
@@ -121,11 +117,6 @@ class DecisionActionMapperTest {
         
         assertEquals("POST", call?.method)
         assertEquals("$baseUrl/api/decisions/dec-1/answer", call?.url)
-        val bodyJson = org.json.JSONObject(call?.body)
-        assertTrue(bodyJson.has("value"))
-        assertTrue(bodyJson.get("value") is org.json.JSONArray)
-        val valueArray = bodyJson.getJSONArray("value")
-        assertEquals(1, valueArray.length())
-        assertEquals("opt-1", valueArray.getString(0))
+        assertEquals("{\"value\":[\"opt-1\"]}", call?.body)
     }
 }
