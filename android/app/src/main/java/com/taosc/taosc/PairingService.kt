@@ -121,7 +121,7 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
             "push_token" to pushToken
         )
         
-        val response = patch(url, body, mapOf(
+        val response = httpClient.patch(url, body, mapOf(
             "Content-Type" to "application/json",
             "Authorization" to "Bearer $scopedToken"
         ))
@@ -129,24 +129,6 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
         if (response.code !in 200..299) {
             throw PairingError.Unreachable
         }
-    }
-    
-    private fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
-        // Implement PATCH using HttpURLConnection
-        val connection = URL(url).openConnection() as HttpURLConnection
-        connection.requestMethod = "PATCH"
-        headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
-        connection.doOutput = true
-        connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-        
-        val responseCode = connection.responseCode
-        val responseBody = if (responseCode in 200..299) {
-            connection.inputStream.bufferedReader().use { it.readText() }
-        } else {
-            connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
-        }
-        
-        return HttpResponse(responseCode, responseBody)
     }
 }
 

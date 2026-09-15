@@ -76,8 +76,6 @@ class DecisionActionReceiver : BroadcastReceiver() {
                     action = action,
                     payload = payload,
                     baseUrl = baseUrl,
-                    deviceId = deviceId,
-                    scopedToken = scopedToken,
                     quickReplyText = text
                 )
                 
