@@ -122,6 +122,7 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.Deny -> "deny"
             is DecisionAction.Pick -> "pick"
             is DecisionAction.QuickReply -> "quick_reply"
+            is DecisionAction.AddNote -> "add_note"
         }
     }
     
@@ -131,6 +132,7 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.Deny -> "Deny"
             is DecisionAction.Pick -> action.label
             is DecisionAction.QuickReply -> "Reply"
+            is DecisionAction.AddNote -> "Add note"
         }
     }
 }

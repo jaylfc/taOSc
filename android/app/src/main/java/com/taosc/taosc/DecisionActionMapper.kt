@@ -1,5 +1,6 @@
 package com.taosc.taosc
 
+import org.json.JSONArray
 import org.json.JSONObject
 
 data class OutboundCall(
@@ -18,20 +19,25 @@ object DecisionActionMapper {
         quickReplyText: String = ""
     ): OutboundCall? {
         val decisionId = payload.decisionId ?: return null
-        
-        when (action) {
-            is DecisionAction.AddNote -> return null
-            is DecisionAction.Approve -> put("value", "approve")
-            is DecisionAction.Deny -> put("value", "deny")
-            is DecisionAction.Pick -> {
-                when (payload.decisionType) {
-                    "multi_select" -> {
-                        put("value", JSONArray().put(action.value))
-                    }
+        if (action is DecisionAction.AddNote) return null
+
+        val bodyJson = JSONObject().apply {
+            when (action) {
+                is DecisionAction.Approve -> put("value", "approve")
+                is DecisionAction.Deny -> put("value", "deny")
+                is DecisionAction.Pick -> when (payload.decisionType) {
+                    "multi_select" -> put("value", JSONArray().put(action.value))
                     else -> put("value", action.value)
                 }
+                is DecisionAction.QuickReply -> put("value", quickReplyText)
+                is DecisionAction.AddNote -> {}   // unreachable, returned above
             }
-            is DecisionAction.QuickReply -> put("value", quickReplyText)
-        }
+        }.toString()
+
+        return OutboundCall(
+            url = "$baseUrl/api/decisions/$decisionId/answer",
+            method = "POST",
+            body = bodyJson
+        )
     }
 }
