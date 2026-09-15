@@ -145,26 +145,18 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
     func buildBody(actionId: String, decisionType: String, otherValue: String?) -> [String: Any] {
         var body: [String: Any] = [:]
 
+        if actionId == DecisionAction.quickReply.rawValue {
+            if let text = otherValue, !text.isEmpty { body["value"] = text }
+            return body                       // never set other_value on a quick_reply
+        }
+        if actionId == DecisionAction.addNote.rawValue {
+            return body                       // unreachable today; keep it that way
+        }
+
         switch decisionType {
-        case "single_select":
-            body["value"] = actionId
-        case "multi_select":
-            body["value"] = [actionId]
-        case "add_note":
-            break
-        case "quick_reply":
-            if let otherValue = otherValue, !otherValue.isEmpty {
-                body["value"] = otherValue
-            }
-        default:
-            body["value"] = actionId
+        case "multi_select": body["value"] = [actionId]
+        default:             body["value"] = actionId
         }
-
-        if decisionType != "quick_reply" && decisionType != "add_note",
-           let otherValue = otherValue, !otherValue.isEmpty {
-            body["other_value"] = otherValue
-        }
-
         return body
     }
 

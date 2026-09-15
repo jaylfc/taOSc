@@ -231,37 +231,6 @@ final class PushPayloadTests: XCTestCase {
     }
 }
 
-class MockHTTPURLProtocol: URLProtocol {
-    static var mockResponses: [URL: (Int, Data?)] = [:]
-    static var capturedRequest: URLRequest?
-
-    override class func canInit(with request: URLRequest) -> Bool {
-        return request.url?.scheme == "http" || request.url?.scheme == "https"
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        return request
-    }
-
-    override func startLoading() {
-        MockHTTPURLProtocol.capturedRequest = request
-        guard let url = request.url,
-              let (statusCode, body) = MockHTTPURLProtocol.mockResponses[url] else {
-            let error = NSError(domain: "MockHTTPURLProtocol", code: -1, userInfo: nil)
-            client?.urlProtocol(self, didFailWithError: error)
-            return
-        }
-        let response = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        if let body = body {
-            client?.urlProtocol(self, didLoad: body)
-        }
-        client?.urlProtocolDidFinishLoading(self)
-    }
-
-    override func stopLoading() {}
-}
-
 private func getCategories() async throws -> Set<UNNotificationCategory> {
     try await withCheckedThrowingContinuation { continuation in
         UNUserNotificationCenter.current().getNotificationCategories { categories in
