@@ -23,18 +23,28 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
         super.init()
     }
 
+    private func stringKeyedUserInfo(from userInfo: [AnyHashable: Any]) -> [String: Any] {
+        var result: [String: Any] = [:]
+        for (key, value) in userInfo {
+            if let key = key as? String {
+                result[key] = value
+            }
+        }
+        return result
+    }
+
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler:
                                 @escaping (UNNotificationPresentationOptions) -> Void) {
-        registerCategories(from: notification.request.content.userInfo)
+        registerCategories(from: stringKeyedUserInfo(from: notification.request.content.userInfo))
         completionHandler([.banner, .sound])
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let userInfo = response.notification.request.content.userInfo
+        let userInfo = stringKeyedUserInfo(from: response.notification.request.content.userInfo)
         let actionIdentifier = response.actionIdentifier
         let decisionId = userInfo["decision_id"] as? String ?? ""
         let decisionType = userInfo["decision_type"] as? String ?? ""
@@ -66,7 +76,7 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
                 let id = actionDict["id"] as? String ?? ""
                 let title = actionDict["title"] as? String ?? id
                 let requiresText = actionDict["requires_text"] as? Bool ?? false
-                let options: UNNotificationAction.Options = requiresText ? .isTextInputAllowed : []
+                let options: UNNotificationActionOptions = requiresText ? .isTextInputAllowed : []
                 actions.append(UNNotificationAction(identifier: id, title: title, options: options))
             }
         }
@@ -139,7 +149,7 @@ final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDeleg
     }
 
     func sendAnswer(decisionId: String, body: [String: Any]) async {
-        guard let baseURL = baseURL else { return }
+        guard let baseURL = Self.baseURL else { return }
 
         do {
             let url = baseURL.appendingPathComponent("api/decisions/\(decisionId)/answer")
