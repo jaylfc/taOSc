@@ -61,7 +61,7 @@ final class PushPayloadTests: XCTestCase {
 
     func testSendAnswerUsesBaseURL() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -83,7 +83,7 @@ final class PushPayloadTests: XCTestCase {
 
     func testSendAnswerIncludesAuthorizationHeader() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -105,7 +105,7 @@ final class PushPayloadTests: XCTestCase {
 
     func testSendAnswerOmitsOtherValueWhenEmpty() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -121,13 +121,13 @@ final class PushPayloadTests: XCTestCase {
 
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
-        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["other_value"])
     }
 
     func testSendAnswerHandles404() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -147,7 +147,7 @@ final class PushPayloadTests: XCTestCase {
 
     func testSendAnswerHandles409Gate() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -167,7 +167,7 @@ final class PushPayloadTests: XCTestCase {
 
     func testSendAnswerHandles409AlreadyAnswered() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]

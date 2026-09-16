@@ -8,7 +8,7 @@ final class PushRegistrar {
 
     var deviceToken: Data?
     var baseURL: URL?
-    private var deviceId: String?
+    var deviceId: String?
     var urlSession: URLSession = .shared
 
     func registerIfPaired(baseURL: URL) async {

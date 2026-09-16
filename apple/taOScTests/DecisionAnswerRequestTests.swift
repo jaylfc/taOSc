@@ -11,7 +11,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
     func testURLValidatorRejectsMissingHost() {
         let result = URLValidator.validate("http://")
         if case .failure(let error) = result {
-            XCTAssertEqual(error as? URLValidator.URLValidationError, .missingHost)
+            XCTAssertEqual(error as? URLValidationError, .missingHost)
         } else {
             XCTFail("Expected failure for URL with no host")
         }
@@ -63,6 +63,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
+        XCTAssertEqual(json["value"] as? String, "opt_a")
         XCTAssertNil(json["other_value"])
         XCTAssertNil(json["source"])
     }
@@ -128,7 +129,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
-        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["source"])
     }
 }
