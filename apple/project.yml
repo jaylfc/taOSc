@@ -11,6 +11,8 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - taOSc
+    entitlements:
+      path: taOSc.entitlements
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.jaylfc.taOSc
       GENERATE_INFOPLIST_FILE: NO
