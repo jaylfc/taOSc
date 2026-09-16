@@ -17,7 +17,7 @@ enum DecisionAction: String {
 final class DecisionNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
     static let shared = DecisionNotificationHandler()
     static var baseURL: URL?
-    private(set) var urlSession: URLSession = .shared
+    var urlSession: URLSession = .shared
 
     // Bridge from AnyHashable:Any to String:Any by filtering out non-String keys
     private func bridgeUserInfo(from userInfo: [AnyHashable: Any]) -> [String: Any] {

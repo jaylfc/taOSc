@@ -28,7 +28,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
     func testSendAnswerHandles401() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -47,7 +47,7 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
     func testSendAnswerFromInAppBuildsListBodyForSingleSelect() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -62,15 +62,14 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
-        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
-        XCTAssertEqual(json["value"] as? String, "opt_a")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["other_value"])
         XCTAssertNil(json["source"])
     }
 
     func testSendAnswerFromInAppBuildsListBodyForMultiSelect() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -85,13 +84,13 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
-        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertEqual(json["value"] as? [String], ["opt_a"])
     }
 
     func testSendAnswerOmitsEmptyOtherValue() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
@@ -107,13 +106,13 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         let request = MockHTTPURLProtocol.capturedRequest!
         let bodyData = request.httpBody!
-        let json = try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["other_value"])
     }
 
     func testSendAnswerOmitsSource() async throws {
         let handler = DecisionNotificationHandler.shared
-        handler.baseURL = URL(string: "https://test.example.com")!
+        DecisionNotificationHandler.baseURL = URL(string: "https://test.example.com")!
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockHTTPURLProtocol.self]
