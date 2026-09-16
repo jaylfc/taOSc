@@ -75,7 +75,7 @@ final class PushPayloadTests: XCTestCase {
         let body: [String: Any] = ["value": "approve"]
         await handler.sendAnswer(decisionId: "dec_123", body: body)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.url?.path, "/api/decisions/dec_123/answer")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
@@ -99,7 +99,7 @@ final class PushPayloadTests: XCTestCase {
         let body: [String: Any] = ["value": "approve"]
         await handler.sendAnswer(decisionId: "dec_123", body: body)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test_scoped_token")
     }
 
@@ -119,8 +119,8 @@ final class PushPayloadTests: XCTestCase {
         let body: [String: Any] = ["value": "approve"]
         await handler.sendAnswer(decisionId: "dec_123", body: body)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
-        let bodyData = request.httpBody!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["other_value"])
     }
@@ -224,7 +224,7 @@ final class PushPayloadTests: XCTestCase {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
 
-        let request = MockHTTPURLProtocol.capturedRequest!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
         XCTAssertEqual(request.httpMethod, "PATCH")
         XCTAssertEqual(request.url?.path, "/api/devices/test-device-id/push-token")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test_scoped_token")

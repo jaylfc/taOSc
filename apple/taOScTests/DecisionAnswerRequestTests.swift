@@ -60,8 +60,8 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         await handler.sendAnswerFromInApp(decisionId: "dec_123", decisionType: "single_select", actionId: "opt_a", otherValue: nil)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
-        let bodyData = request.httpBody!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertEqual(json["value"] as? String, "opt_a")
         XCTAssertNil(json["other_value"])
@@ -83,8 +83,8 @@ final class DecisionAnswerRequestTests: XCTestCase {
 
         await handler.sendAnswerFromInApp(decisionId: "dec_123", decisionType: "multi_select", actionId: "opt_a", otherValue: nil)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
-        let bodyData = request.httpBody!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertEqual(json["value"] as? [String], ["opt_a"])
     }
@@ -105,8 +105,8 @@ final class DecisionAnswerRequestTests: XCTestCase {
         let body: [String: Any] = ["value": "approve"]
         await handler.sendAnswer(decisionId: "dec_123", body: body)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
-        let bodyData = request.httpBody!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["other_value"])
     }
@@ -127,8 +127,8 @@ final class DecisionAnswerRequestTests: XCTestCase {
         let body: [String: Any] = ["value": "approve"]
         await handler.sendAnswer(decisionId: "dec_123", body: body)
 
-        let request = MockHTTPURLProtocol.capturedRequest!
-        let bodyData = request.httpBody!
+        let request = try XCTUnwrap(MockHTTPURLProtocol.capturedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
         XCTAssertNil(json["source"])
     }
@@ -147,8 +147,22 @@ class MockHTTPURLProtocol: URLProtocol {
     }
 
     override func startLoading() {
-        MockHTTPURLProtocol.capturedRequest = request
-        guard let url = request.url,
+        var captured = request
+        if captured.httpBody == nil, let stream = request.httpBodyStream {
+            stream.open()
+            defer { stream.close() }
+            var data = Data()
+            let bufferSize = 4096
+            var buffer = [UInt8](repeating: 0, count: bufferSize)
+            while stream.hasBytesAvailable {
+                let count = stream.read(&buffer, maxLength: bufferSize)
+                if count <= 0 { break }
+                data.append(buffer, count: count)
+            }
+            captured.httpBody = data
+        }
+        MockHTTPURLProtocol.capturedRequest = captured
+        guard let url = captured.url,
               let (statusCode, body) = MockHTTPURLProtocol.mockResponses[url] else {
             let error = NSError(domain: "MockHTTPURLProtocol", code: -1, userInfo: nil)
             client?.urlProtocol(self, didFailWithError: error)
