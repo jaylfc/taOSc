@@ -8,6 +8,10 @@ class SettingsStore(private val prefs: SharedPreferences) {
         get() = prefs.getString("serverURL", "") ?: ""
         set(value) = prefs.edit().putString("serverURL", value).apply()
     
+    var deviceId: String
+        get() = prefs.getString("deviceId", "") ?: ""
+        set(value) = prefs.edit().putString("deviceId", value).apply()
+    
     val hasServerUrl: Boolean
         get() = serverUrl.isNotBlank()
     
@@ -17,6 +21,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
     
     fun logout(credentialStore: CredentialStore) {
         serverUrl = ""
+        deviceId = ""
         credentialStore.deleteToken()
     }
 }

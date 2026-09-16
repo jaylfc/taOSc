@@ -7,6 +7,7 @@ import org.json.JSONObject
 interface HttpClient {
     fun post(url: String, body: String, headers: Map<String, String> = emptyMap()): HttpResponse
     fun get(url: String, headers: Map<String, String> = emptyMap()): HttpResponse
+    fun patch(url: String, body: String, headers: Map<String, String> = emptyMap()): HttpResponse
 }
 
 data class HttpResponse(
@@ -14,39 +15,56 @@ data class HttpResponse(
     val body: String
 )
 
-class DefaultHttpClient : HttpClient {
-    override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        connection.requestMethod = "POST"
-        headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
-        connection.doOutput = true
-        connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-        
-        val responseCode = connection.responseCode
-        val responseBody = if (responseCode in 200..299) {
-            connection.inputStream.bufferedReader().use { it.readText() }
-        } else {
-            connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+    class DefaultHttpClient : HttpClient {
+        override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
+            connection.doOutput = true
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            
+            val responseCode = connection.responseCode
+            val responseBody = if (responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            }
+            
+            return HttpResponse(responseCode, responseBody)
         }
         
-        return HttpResponse(responseCode, responseBody)
-    }
-    
-    override fun get(url: String, headers: Map<String, String>): HttpResponse {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
-        
-        val responseCode = connection.responseCode
-        val responseBody = if (responseCode in 200..299) {
-            connection.inputStream.bufferedReader().use { it.readText() }
-        } else {
-            connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+        override fun get(url: String, headers: Map<String, String>): HttpResponse {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
+            
+            val responseCode = connection.responseCode
+            val responseBody = if (responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            }
+            
+            return HttpResponse(responseCode, responseBody)
         }
         
-        return HttpResponse(responseCode, responseBody)
+        override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "PATCH"
+            headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
+            connection.doOutput = true
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            
+            val responseCode = connection.responseCode
+            val responseBody = if (responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            }
+            
+            return HttpResponse(responseCode, responseBody)
+        }
     }
-}
 
 class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
     fun createPairRequest(baseUrl: String, platform: String, displayName: String): PairRequestResponse {
@@ -96,6 +114,23 @@ class PairingService(private val httpClient: HttpClient = DefaultHttpClient()) {
             else -> throw PairingError.Unreachable
         }
     }
+    
+    fun updatePushToken(baseUrl: String, deviceId: String, pushToken: String, scopedToken: String) {
+        val url = "$baseUrl/api/devices/$deviceId/push-token"
+        val body = Json.buildObject(
+            "push_token" to pushToken
+        )
+        
+        val response = httpClient.patch(url, body, mapOf(
+            "Content-Type" to "application/json",
+            "Authorization" to "Bearer $scopedToken"
+        ))
+        
+        if (response.code !in 200..299) {
+            throw PairingError.Unreachable
+        }
+    }
+    
 }
 
 private object Json {

@@ -2,6 +2,7 @@ package com.taosc.taosc
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -33,6 +34,10 @@ class MainActivity : ComponentActivity() {
         val settingsStore = SettingsStore(prefs)
         val credentialStore = EncryptedCredentialStore.create(this)
         
+        if (settingsStore.hasServerUrl && settingsStore.isPaired(credentialStore)) {
+            registerForPush(settingsStore, credentialStore)
+        }
+        
         setContent {
             val initialScreen = if (settingsStore.hasServerUrl && settingsStore.isPaired(credentialStore)) {
                 Screen.WebView(settingsStore.serverUrl)
@@ -54,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 is Screen.Pairing -> PairingGrantScreen(
                     baseUrl = screen.baseUrl,
                     onComplete = {
+                        registerForPush(settingsStore, credentialStore)
                         currentScreen = Screen.WebView(settingsStore.serverUrl)
                     },
                     onDismiss = {
@@ -65,6 +71,47 @@ class MainActivity : ComponentActivity() {
                 is Screen.WebView -> WebViewScreen(url = screen.url)
             }
         }
+    }
+    
+    private fun registerForPush(settingsStore: SettingsStore, credentialStore: CredentialStore) {
+        Thread {
+            try {
+                val prefs = getSharedPreferences("taosc_settings", Context.MODE_PRIVATE)
+                val registrar = UnifiedPushRegistrar(
+                    broadcastSender = { intent -> sendBroadcast(intent) },
+                    discovery = PackageManagerDiscovery(packageManager),
+                    prefs = prefs
+                )
+                
+                val distributor = registrar.discoverDistributor()
+                if (distributor == null) {
+                    return@Thread
+                }
+                
+                val latch = java.util.concurrent.CountDownLatch(1)
+                
+                registrar.register(packageName) { ep ->
+                    latch.countDown()
+                }
+                
+                latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
+                
+                val pushStore = PushTokenStore(prefs)
+                
+                if (pushStore.hasEndpoint) {
+                    val scopedToken = credentialStore.readToken() ?: return@Thread
+                    val service = PairingService()
+                    service.updatePushToken(
+                        baseUrl = settingsStore.serverUrl,
+                        deviceId = settingsStore.deviceId,
+                        pushToken = pushStore.endpoint!!,
+                        scopedToken = scopedToken
+                    )
+                }
+            } catch (e: Exception) {
+                // best-effort
+            }
+        }.start()
     }
 }
 
