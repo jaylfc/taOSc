@@ -16,72 +16,79 @@ class DecisionNotificationManager(private val context: Context) {
         const val NOTIFICATION_ID = 1001
         const val KEY_TEXT_REPLY = "key_text_reply"
     }
-    
+
     init {
         createChannel()
     }
-    
+
     fun showDecisionNotification(payload: DecisionPayload) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        val actions = payload.actions
-        .filter { it !is DecisionAction.AddNote }
-        .map { action ->
-            when (action) {
-                is DecisionAction.QuickReply -> {
-                    val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
-                        .setLabel("Reply")
-                        .build()
-                    
-                    val resultIntent = Intent(context, DecisionActionReceiver::class.java).apply {
-                        putExtra(DecisionActionReceiver.EXTRA_ACTION_TYPE, "quick_reply")
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_TITLE, payload.title)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_BODY, payload.body)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_ID, payload.decisionId)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_TYPE, payload.decisionType)
-                    }
-                    
-                    val pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        action.hashCode(),
-                        resultIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    
-                    NotificationCompat.Action.Builder(
-                        0,
-                        "Reply",
-                        pendingIntent
-                    ).addRemoteInput(remoteInput).build()
-                }
-                else -> {
-                    val resultIntent = Intent(context, DecisionActionReceiver::class.java).apply {
-                        putExtra(DecisionActionReceiver.EXTRA_ACTION_TYPE, actionToString(action))
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_TITLE, payload.title)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_BODY, payload.body)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_ID, payload.decisionId)
-                        putExtra(DecisionActionReceiver.EXTRA_DECISION_TYPE, payload.decisionType)
-                        if (action is DecisionAction.Pick) {
-                            putExtra(DecisionActionReceiver.EXTRA_PICK_VALUE, action.value)
+
+        val decisionId = payload.decisionId
+        val actions = decisionId?.let { id ->
+            payload.actions
+                .filter { it !is DecisionAction.AddNote }
+               map { action ->
+                    when (action) {
+                        is DecisionAction.QuickReply -> {
+                            val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
+                                .setLabel("Reply")
+                                .build()
+
+                            val resultIntent = Intent(context, DecisionActionReceiver::class.java).apply {
+                                putExtra(DecisionActionReceiver.EXTRA_ACTION_TYPE, "quick_reply")
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_TITLE, payload.title)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_BODY, payload.body)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_ID, id)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_TYPE, payload.decisionType)
+                            }
+
+                            resultIntent.data = android.net.Uri.parse("taosc://" + intentKey(id, action))
+
+                            val pendingIntent = PendingIntent.getBroadcast(
+                                context,
+                                intentKey(id, action).hashCode(),
+                                resultIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+
+                            NotificationCompat.Action.Builder(
+                                0,
+                                "Reply",
+                                pendingIntent
+                            ).addRemoteInput(remoteInput).build()
+                        }
+                        else -> {
+                            val resultIntent = Intent(context, DecisionActionReceiver::class.java).apply {
+                                putExtra(DecisionActionReceiver.EXTRA_ACTION_TYPE, actionToString(action))
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_TITLE, payload.title)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_BODY, payload.body)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_ID, id)
+                                putExtra(DecisionActionReceiver.EXTRA_DECISION_TYPE, payload.decisionType)
+                                if (action is DecisionAction.Pick) {
+                                    putExtra(DecisionActionReceiver.EXTRA_PICK_VALUE, action.value)
+                                }
+                            }
+
+                            resultIntent.data = android.net.Uri.parse("taosc://" + intentKey(id, action))
+
+                            val pendingIntent = PendingIntent.getBroadcast(
+                                context,
+                                intentKey(id, action).hashCode(),
+                                resultIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+
+                            NotificationCompat.Action.Builder(
+                                0,
+                                actionLabel(action),
+                                pendingIntent
+                            ).build()
                         }
                     }
-                    
-                    val pendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        action.hashCode(),
-                        resultIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                    )
-                    
-                    NotificationCompat.Action.Builder(
-                        0,
-                        actionLabel(action),
-                        pendingIntent
-                    ).build()
                 }
-            }
-        }
-        
+        } ?: emptyList()
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(payload.title)
@@ -89,19 +96,19 @@ class DecisionNotificationManager(private val context: Context) {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
-        
+
         actions.forEach { builder.addAction(it) }
-        
+
         val notification = builder.build()
         notificationManager.notify(NOTIFICATION_ID + (payload.decisionId?.hashCode() ?: 0), notification)
     }
-    
+
     fun dismissNotification(decisionId: String?) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val id = NOTIFICATION_ID + (decisionId?.hashCode() ?: 0)
         notificationManager.cancel(id)
     }
-    
+
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -115,7 +122,7 @@ class DecisionNotificationManager(private val context: Context) {
             notificationManager.createNotificationChannel(channel)
         }
     }
-    
+
     private fun actionToString(action: DecisionAction): String {
         return when (action) {
             is DecisionAction.Approve -> "approve"
@@ -125,7 +132,7 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.AddNote -> "add_note"
         }
     }
-    
+
     private fun actionLabel(action: DecisionAction): String {
         return when (action) {
             is DecisionAction.Approve -> "Approve"
