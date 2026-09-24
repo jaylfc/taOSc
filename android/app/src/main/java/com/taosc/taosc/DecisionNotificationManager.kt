@@ -28,7 +28,7 @@ class DecisionNotificationManager(private val context: Context) {
         val actions = decisionId?.let { id ->
             payload.actions
                 .filter { it !is DecisionAction.AddNote }
-               map { action ->
+                .map { action ->
                     when (action) {
                         is DecisionAction.QuickReply -> {
                             val remoteInput = RemoteInput.Builder(KEY_TEXT_REPLY)
