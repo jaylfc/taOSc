@@ -1,5 +1,7 @@
 package com.taosc.taosc
 
+import org.json.JSONObject
+
 enum class ShareDestinationKind { LIBRARY, PROJECT_FILES, AGENT_CHAT }
 
 data class ShareDestination(val kind: ShareDestinationKind, val id: String, val label: String)
