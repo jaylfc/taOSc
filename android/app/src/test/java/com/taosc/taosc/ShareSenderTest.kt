@@ -1,5 +1,6 @@
 package com.taosc.taosc
 
+import java.io.IOException
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
