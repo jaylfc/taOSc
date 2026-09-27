@@ -4,3 +4,4 @@ android/app/build/
 *.iml
 .idea/
 local.properties
+android-sdk/
