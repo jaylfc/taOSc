@@ -188,8 +188,12 @@ class PairingServiceTest {
     }
 }
 
-open class FakeHttpClient(protected val responses: MutableMap<String, HttpResponse> = mutableMapOf()) : HttpClient {
+ open class FakeHttpClient(protected val responses: MutableMap<String, HttpResponse> = mutableMapOf()) : HttpClient {
     override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+        return responses[url] ?: HttpResponse(500, "")
+    }
+    
+    override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
         return responses[url] ?: HttpResponse(500, "")
     }
     

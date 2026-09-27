@@ -4,7 +4,7 @@ import org.json.JSONObject
 
 enum class ShareDestinationKind { LIBRARY, PROJECT_FILES, AGENT_CHAT }
 
-data class ShareDestination(val kind: ShareDestinationKind, val id: String, val label: String)
+data class ShareDestination(val kind: ShareDestinationKind, val id: String, val label: String, val channelId: String? = null)
 
 sealed class ShareDestinationsError : Exception() {
     data object NotPaired : ShareDestinationsError()
@@ -50,7 +50,15 @@ class ShareDestinationsClient(private val httpClient: HttpClient = DefaultHttpCl
                     continue
                 }
 
-                destinations.add(ShareDestination(kind, id, label))
+                if (kind == ShareDestinationKind.AGENT_CHAT) {
+                    val channelId = if (destinationJson.isNull("channel_id")) null else destinationJson.optString("channel_id", "")
+                    if (channelId == null || channelId.isEmpty()) {
+                        continue
+                    }
+                    destinations.add(ShareDestination(kind, id, label, channelId))
+                } else {
+                    destinations.add(ShareDestination(kind, id, label))
+                }
             }
             destinations
         } catch (e: org.json.JSONException) {
