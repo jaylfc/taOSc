@@ -322,13 +322,16 @@ class ShareSenderTest {
     }
 
     @Test
-    fun `library text 500 returns unreachable`() {
+    fun `library text ioexception returns unreachable`() {
+        val calls = mutableListOf<RecordedCall>()
         val httpClient = object : HttpClient {
             override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
-                return HttpResponse(500, "")
+                calls.add(RecordedCall(url, headers, body.toByteArray(Charsets.UTF_8)))
+                throw IOException("offline")
             }
             override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
-                return HttpResponse(500, "")
+                calls.add(RecordedCall(url, headers, body))
+                throw IOException("offline")
             }
             override fun get(url: String, headers: Map<String, String>): HttpResponse {
                 return HttpResponse(200, "")
@@ -344,5 +347,60 @@ class ShareSenderTest {
         val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
 
         assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
+    fun `agent chat text ioexception returns unreachable`() {
+        val calls = mutableListOf<RecordedCall>()
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                throw IOException("offline")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                calls.add(RecordedCall(url, headers, body))
+                throw IOException("offline")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val destination = ShareDestination(ShareDestinationKind.AGENT_CHAT, "chat-123", "My Chat", "dm-channel-456")
+        val item = ShareItem.Text("hello world")
+
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
+    fun `library file readfile exception returns rejected with no network call`() {
+        val (httpClient, calls) = recordingFake()
+        val sender = ShareSender(httpClient) { "boundary" }
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.File("content://test/photo.jpg", "image/jpeg")
+
+        val result = sender.send("https://example.com", "token-123", destination, item) {
+            throw IOException("file gone")
+        }
+
+        assertEquals(SendResult.Rejected(0), result)
+        assertTrue(calls.isEmpty())
+    }
+
+    @Test
+    fun `agent chat null channelId returns rejected with no network call`() {
+        val (httpClient, calls) = recordingFake()
+        val sender = ShareSender(httpClient) { "boundary" }
+        val destination = ShareDestination(ShareDestinationKind.AGENT_CHAT, "chat-123", "My Chat")
+        val item = ShareItem.Text("hello world")
+
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Rejected(0), result)
+        assertTrue(calls.isEmpty())
     }
 }

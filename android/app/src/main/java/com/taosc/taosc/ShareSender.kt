@@ -1,6 +1,7 @@
 package com.taosc.taosc
 
 import org.json.JSONObject
+import java.io.IOException
 
 data class SharedFile(val filename: String, val mimeType: String?, val bytes: ByteArray)
 
@@ -25,7 +26,10 @@ class ShareSender(private val httpClient: HttpClient, private val boundary: () -
         return when (destination.kind) {
             ShareDestinationKind.LIBRARY -> sendLibrary(baseUrl, item, headers, readFile)
             ShareDestinationKind.PROJECT_FILES -> sendProjectFile(baseUrl, destination.id, item, headers, readFile)
-            ShareDestinationKind.AGENT_CHAT -> sendAgentChat(baseUrl, destination.channelId!!, item, headers)
+            ShareDestinationKind.AGENT_CHAT -> {
+                val cid = destination.channelId
+                if (cid == null) SendResult.Rejected(0) else sendAgentChat(baseUrl, cid, item, headers)
+            }
         }
     }
 
@@ -43,18 +47,22 @@ class ShareSender(private val httpClient: HttpClient, private val boundary: () -
         readFile: (uri: String) -> SharedFile
     ): SendResult {
         val uploadRequests = ShareUploadRequests(boundary())
-        val request = when (item) {
-            is ShareItem.Text -> {
-                val bytes = item.text.toByteArray(Charsets.UTF_8)
-                uploadRequests.libraryFile(baseUrl, "shared-text.txt", "text/plain; charset=utf-8", bytes, null)
+        val request = try {
+            when (item) {
+                is ShareItem.Text -> {
+                    val bytes = item.text.toByteArray(Charsets.UTF_8)
+                    uploadRequests.libraryFile(baseUrl, "shared-text.txt", "text/plain; charset=utf-8", bytes, null)
+                }
+                is ShareItem.Link -> {
+                    uploadRequests.libraryLink(baseUrl, item.url, item.title)
+                }
+                is ShareItem.File -> {
+                    val sharedFile = readFile(item.uri)
+                    uploadRequests.libraryFile(baseUrl, sharedFile.filename, sharedFile.mimeType, sharedFile.bytes, null)
+                }
             }
-            is ShareItem.Link -> {
-                uploadRequests.libraryLink(baseUrl, item.url, item.title)
-            }
-            is ShareItem.File -> {
-                val sharedFile = readFile(item.uri)
-                uploadRequests.libraryFile(baseUrl, sharedFile.filename, sharedFile.mimeType, sharedFile.bytes, null)
-            }
+        } catch (e: Exception) {
+            return SendResult.Rejected(0)
         }
         return execute(request, headers)
     }
@@ -67,19 +75,23 @@ class ShareSender(private val httpClient: HttpClient, private val boundary: () -
         readFile: (uri: String) -> SharedFile
     ): SendResult {
         val uploadRequests = ShareUploadRequests(boundary())
-        val request = when (item) {
-            is ShareItem.Text -> {
-                val bytes = item.text.toByteArray(Charsets.UTF_8)
-                uploadRequests.projectFile(baseUrl, slug, "shared-text.txt", "text/plain; charset=utf-8", bytes)
+        val request = try {
+            when (item) {
+                is ShareItem.Text -> {
+                    val bytes = item.text.toByteArray(Charsets.UTF_8)
+                    uploadRequests.projectFile(baseUrl, slug, "shared-text.txt", "text/plain; charset=utf-8", bytes)
+                }
+                is ShareItem.Link -> {
+                    val bytes = item.url.toByteArray(Charsets.UTF_8)
+                    uploadRequests.projectFile(baseUrl, slug, "shared-text.txt", "text/plain; charset=utf-8", bytes)
+                }
+                is ShareItem.File -> {
+                    val sharedFile = readFile(item.uri)
+                    uploadRequests.projectFile(baseUrl, slug, sharedFile.filename, sharedFile.mimeType, sharedFile.bytes)
+                }
             }
-            is ShareItem.Link -> {
-                val bytes = item.url.toByteArray(Charsets.UTF_8)
-                uploadRequests.projectFile(baseUrl, slug, "shared-text.txt", "text/plain; charset=utf-8", bytes)
-            }
-            is ShareItem.File -> {
-                val sharedFile = readFile(item.uri)
-                uploadRequests.projectFile(baseUrl, slug, sharedFile.filename, sharedFile.mimeType, sharedFile.bytes)
-            }
+        } catch (e: Exception) {
+            return SendResult.Rejected(0)
         }
         return execute(request, headers)
     }
@@ -108,13 +120,21 @@ class ShareSender(private val httpClient: HttpClient, private val boundary: () -
 
         val body = json.toString().toByteArray(Charsets.UTF_8)
         val requestHeaders = headers + mapOf("Content-Type" to "application/json")
-        val response = httpClient.postBytes("$baseUrl/api/chat/messages", body, requestHeaders)
-        return mapResponse(response)
+        return try {
+            val response = httpClient.postBytes("$baseUrl/api/chat/messages", body, requestHeaders)
+            mapResponse(response)
+        } catch (e: IOException) {
+            SendResult.Unreachable
+        }
     }
 
     private fun execute(request: UploadRequest, headers: Map<String, String>): SendResult {
-        val response = httpClient.postBytes(request.url, request.body, headers + mapOf("Content-Type" to request.contentType))
-        return mapResponse(response)
+        return try {
+            val response = httpClient.postBytes(request.url, request.body, headers + mapOf("Content-Type" to request.contentType))
+            mapResponse(response)
+        } catch (e: IOException) {
+            SendResult.Unreachable
+        }
     }
 
     private fun mapResponse(response: HttpResponse): SendResult {

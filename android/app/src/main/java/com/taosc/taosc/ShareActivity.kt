@@ -166,7 +166,14 @@ class ShareActivity : ComponentActivity() {
                         results.add(SendResult.Rejected(0))
                         break
                     }
-                    results.add(shareSender.send(baseUrl, token, destination, item, ::readFile))
+                    try {
+                        val result = shareSender.send(baseUrl, token, destination, item, ::readFile)
+                        results.add(result)
+                        if (result !is SendResult.Sent) break
+                    } catch (e: Exception) {
+                        sendResult = SendResult.Unreachable
+                        return@launch
+                    }
                 }
                 val firstFailure = results.firstOrNull { it !is SendResult.Sent }
                 sendResult = firstFailure ?: SendResult.Sent
