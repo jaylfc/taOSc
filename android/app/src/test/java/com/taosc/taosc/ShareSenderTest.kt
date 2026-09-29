@@ -323,6 +323,31 @@ class ShareSenderTest {
     }
 
     @Test
+    fun `library text 500 returns unreachable`() {
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(500, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(500, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
     fun `library text ioexception returns unreachable`() {
         val calls = mutableListOf<RecordedCall>()
         val httpClient = object : HttpClient {
