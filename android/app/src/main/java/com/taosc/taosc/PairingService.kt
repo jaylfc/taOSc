@@ -6,6 +6,7 @@ import org.json.JSONObject
 
 interface HttpClient {
     fun post(url: String, body: String, headers: Map<String, String> = emptyMap()): HttpResponse
+    fun postBytes(url: String, body: ByteArray, headers: Map<String, String> = emptyMap()): HttpResponse
     fun get(url: String, headers: Map<String, String> = emptyMap()): HttpResponse
     fun patch(url: String, body: String, headers: Map<String, String> = emptyMap()): HttpResponse
 }
@@ -22,6 +23,23 @@ data class HttpResponse(
             headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
             connection.doOutput = true
             connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            
+            val responseCode = connection.responseCode
+            val responseBody = if (responseCode in 200..299) {
+                connection.inputStream.bufferedReader().use { it.readText() }
+            } else {
+                connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
+            }
+            
+            return HttpResponse(responseCode, responseBody)
+        }
+        
+        override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "POST"
+            headers.forEach { (key, value) -> connection.setRequestProperty(key, value) }
+            connection.doOutput = true
+            connection.outputStream.use { it.write(body) }
             
             val responseCode = connection.responseCode
             val responseBody = if (responseCode in 200..299) {

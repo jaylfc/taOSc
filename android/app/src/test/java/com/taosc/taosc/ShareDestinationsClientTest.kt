@@ -11,11 +11,11 @@ class ShareDestinationsClientTest {
         val client = FakeHttpClient(mutableMapOf(
             "https://api.example.com/api/share/destinations" to HttpResponse(
                 200,
-                """{"destinations":[
-                    {"kind":"library","id":"library","label":"Library"},
-                    {"kind":"project_files","id":"my-project","label":"My Project"},
-                    {"kind":"agent_chat","id":"chat-123","label":"My Chat"}
-                ]}"""
+                 """{"destinations":[
+                     {"kind":"library","id":"library","label":"Library"},
+                     {"kind":"project_files","id":"my-project","label":"My Project"},
+                     {"kind":"agent_chat","id":"chat-123","label":"My Chat","channel_id":"dm-channel-456"}
+                 ]}"""
             )
         ))
         val destinationsClient = ShareDestinationsClient(client)
@@ -31,6 +31,7 @@ class ShareDestinationsClientTest {
         assertEquals(ShareDestinationKind.AGENT_CHAT, destinations[2].kind)
         assertEquals("chat-123", destinations[2].id)
         assertEquals("My Chat", destinations[2].label)
+        assertEquals("dm-channel-456", destinations[2].channelId)
     }
 
     @Test
@@ -61,7 +62,7 @@ class ShareDestinationsClientTest {
                 """{"destinations":[
                     {"kind":"library","id":"lib","label":"Library"},
                     {"kind":"unknown_kind","id":"ignore","label":"Ignore This"},
-                    {"kind":"agent_chat","id":"chat-1","label":"Chat 1"}
+                    {"kind":"agent_chat","id":"chat-1","label":"Chat 1","channel_id":"dm-1"}
                 ]}"""
             )
         ))
@@ -149,5 +150,41 @@ class ShareDestinationsClientTest {
         assertThrows(ShareDestinationsError.Unreachable::class.java) {
             destinationsClient.fetch("https://api.example.com", "token")
         }
+    }
+
+    @Test
+    fun `fetch skips agent_chat without channel_id`() {
+        val client = FakeHttpClient(mutableMapOf(
+            "https://api.example.com/api/share/destinations" to HttpResponse(
+                200,
+                """{"destinations":[
+                    {"kind":"agent_chat","id":"chat-123","label":"My Chat"}
+                ]}"""
+            )
+        ))
+        val destinationsClient = ShareDestinationsClient(client)
+        val destinations = destinationsClient.fetch("https://api.example.com", "token")
+
+        assertEquals(0, destinations.size)
+    }
+
+    @Test
+    fun `fetch includes agent_chat with channel_id`() {
+        val client = FakeHttpClient(mutableMapOf(
+            "https://api.example.com/api/share/destinations" to HttpResponse(
+                200,
+                """{"destinations":[
+                    {"kind":"agent_chat","id":"chat-123","label":"My Chat","channel_id":"dm-channel-456"}
+                ]}"""
+            )
+        ))
+        val destinationsClient = ShareDestinationsClient(client)
+        val destinations = destinationsClient.fetch("https://api.example.com", "token")
+
+        assertEquals(1, destinations.size)
+        assertEquals(ShareDestinationKind.AGENT_CHAT, destinations[0].kind)
+        assertEquals("chat-123", destinations[0].id)
+        assertEquals("My Chat", destinations[0].label)
+        assertEquals("dm-channel-456", destinations[0].channelId)
     }
 }
