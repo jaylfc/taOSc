@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -27,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.work.NetworkType
+import androidx.work.WorkManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -136,6 +139,18 @@ class ShareActivity : ComponentActivity() {
             return SharedFile(filename = displayName, mimeType = mimeType, bytes = bytes)
         }
 
+        private fun copyFileToCache(uri: String): String {
+            val contentResolver = applicationContext.contentResolver
+            val inputStream = contentResolver.openInputStream(Uri.parse(uri))
+                ?: throw IllegalArgumentException("Cannot open input stream for $uri")
+            val file = java.io.File(applicationContext.cacheDir, java.util.UUID.randomUUID().toString())
+            file.parentFile.mkdirs()
+            java.io.FileOutputStream(file).use { output ->
+                inputStream.use { output.write(it.readBytes()) }
+            }
+            return file.absolutePath
+        }
+
         fun fetchDestinations() {
             isLoading = true
             errorMessage = null
@@ -158,26 +173,57 @@ class ShareActivity : ComponentActivity() {
             }
         }
 
-        fun sendToDestination(destination: ShareDestination) {
+        fun enqueueUploadWorker(destination: ShareDestination) {
             scope.launch(Dispatchers.IO) {
-                val results = mutableListOf<SendResult>()
                 for (item in items) {
-                    if (!shareSender.canSend(destination, listOf(item))) {
-                        results.add(SendResult.Rejected(0))
-                        break
+                    val cachedFilePath = when (item) {
+                        is ShareItem.File -> copyFileToCache(item.uri)
+                        else -> null
                     }
-                    try {
-                        val result = shareSender.send(baseUrl, token, destination, item, ::readFile)
-                        results.add(result)
-                        if (result !is SendResult.Sent) break
-                    } catch (e: Exception) {
-                        sendResult = SendResult.Unreachable
-                        return@launch
-                    }
+                    enqueueShareUploadWorker(destination, item, cachedFilePath)
                 }
-                val firstFailure = results.firstOrNull { it !is SendResult.Sent }
-                sendResult = firstFailure ?: SendResult.Sent
+                Toast.makeText(applicationContext, "Queued", Toast.LENGTH_SHORT).show()
+                finish()
             }
+        }
+
+        private fun enqueueShareUploadWorker(
+            destination: ShareDestination,
+            item: ShareItem,
+            cachedFilePath: String?
+        ) {
+            val workManager = WorkManager.getInstance(applicationContext)
+            val inputData = mutableMapOf<String, Any>(
+                "label" to destination.label,
+                "kind" to when (destination.kind) {
+                    ShareDestinationKind.LIBRARY -> "library"
+                    ShareDestinationKind.PROJECT_FILES -> "projectFiles"
+                    ShareDestinationKind.AGENT_CHAT -> "agentChat"
+                    else -> "library"
+                },
+                "id" to destination.id,
+                "channelId" to destination.channelId,
+                "itemKind" to when (item) {
+                    is ShareItem.Text -> "text"
+                    is ShareItem.Link -> "link"
+                    is ShareItem.File -> "file"
+                    else -> "text"
+                },
+                "itemText" to when (item) is ShareItem.Text { item.text } else { "" },
+                "itemUrl" to when (item) is ShareItem.Link { item.url } else { "" },
+                "itemTitle" to when (item) is ShareItem.Link { item.title } else { "" },
+                "cachedFilePath" to cachedFilePath ?: "",
+                "attempt" to 1
+            )
+            val workRequest = androidx.work.OneTimeWorkRequestBuilder<ShareUploadWorker>()
+                .setInputData(inputData)
+                .setNetworkType(NetworkType.CONNECTED)
+                .build()
+            workManager.enqueueUniqueWork(
+                "share_upload_${destination.id}",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                workRequest
+            )
         }
 
         androidx.compose.runtime.LaunchedEffect(Unit) {
@@ -285,7 +331,7 @@ class ShareActivity : ComponentActivity() {
                                     .padding(vertical = 8.dp)
                                     .then(
                                         if (canSend) {
-                                            Modifier.clickable { sendToDestination(destination) }
+                                            Modifier.clickable { enqueueUploadWorker(destination) }
                                         } else {
                                             Modifier
                                         }
