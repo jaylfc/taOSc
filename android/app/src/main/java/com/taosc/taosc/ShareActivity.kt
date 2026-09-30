@@ -36,6 +36,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ShareActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -192,12 +193,18 @@ class ShareActivity : ComponentActivity() {
             }
             
             scope.launch(Dispatchers.IO) {
+                var copyFailed = false
                 for (item in items) {
                     when (item) {
                         is ShareItem.File -> {
                             val path = copyFileToCache(item.uri)
-                            val displayName = readFile(item.uri).filename
-                            val mimeType = readFile(item.uri).mimeType
+                            if (path.isEmpty()) {
+                                copyFailed = true
+                                continue
+                            }
+                            val shared = readFile(item.uri)
+                            val displayName = shared.filename
+                            val mimeType = shared.mimeType
                             
                             val data = workDataOf(
                                 "kind" to destination.kind.name,
@@ -208,7 +215,7 @@ class ShareActivity : ComponentActivity() {
                                 "text" to "",
                                 "url" to "",
                                 "title" to "",
-                                "cachePath" to (path ?: ""),
+                                "cachePath" to path,
                                 "displayName" to displayName,
                                 "mimeType" to mimeType
                             )
@@ -271,8 +278,12 @@ class ShareActivity : ComponentActivity() {
                 }
                 
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@ShareActivity, "Queued", Toast.LENGTH_SHORT).show()
-                    finish()
+                    if (copyFailed) {
+                        errorMessage = "Could not read the shared file"
+                    } else {
+                        Toast.makeText(this@ShareActivity, "Queued", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
                 }
             }
         }
