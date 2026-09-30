@@ -48,6 +48,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation(libs.security.crypto)
+    implementation(libs.work.runtime.ktx)
     testImplementation("junit:junit:4.13.2")
     // org.json ships in android.jar as an unimplemented stub, so JSONObject throws
     // "not mocked" in JVM unit tests. Put a real implementation on the unit-test

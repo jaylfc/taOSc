@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -27,6 +28,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -136,6 +143,26 @@ class ShareActivity : ComponentActivity() {
             return SharedFile(filename = displayName, mimeType = mimeType, bytes = bytes)
         }
 
+        fun copyFileToCache(uri: String): String {
+            val contentResolver: ContentResolver = applicationContext.contentResolver
+            val inputStream = contentResolver.openInputStream(Uri.parse(uri)) ?: return ""
+            
+            val cacheDir = applicationContext.cacheDir
+            val filename = "share_${System.currentTimeMillis()}"
+            val cacheFile = java.io.File(cacheDir, filename)
+            
+            try {
+                cacheFile.outputStream().use { output ->
+                    inputStream.use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                return cacheFile.absolutePath
+            } catch (e: Exception) {
+                return ""
+            }
+        }
+
         fun fetchDestinations() {
             isLoading = true
             errorMessage = null
@@ -159,24 +186,94 @@ class ShareActivity : ComponentActivity() {
         }
 
         fun sendToDestination(destination: ShareDestination) {
+            if (!shareSender.canSend(destination, items)) {
+                errorMessage = "taOS refused this destination"
+                return
+            }
+            
             scope.launch(Dispatchers.IO) {
-                val results = mutableListOf<SendResult>()
                 for (item in items) {
-                    if (!shareSender.canSend(destination, listOf(item))) {
-                        results.add(SendResult.Rejected(0))
-                        break
-                    }
-                    try {
-                        val result = shareSender.send(baseUrl, token, destination, item, ::readFile)
-                        results.add(result)
-                        if (result !is SendResult.Sent) break
-                    } catch (e: Exception) {
-                        sendResult = SendResult.Unreachable
-                        return@launch
+                    when (item) {
+                        is ShareItem.File -> {
+                            val path = copyFileToCache(item.uri)
+                            val displayName = readFile(item.uri).filename
+                            val mimeType = readFile(item.uri).mimeType
+                            
+                            val data = workDataOf(
+                                "kind" to destination.kind.name,
+                                "id" to destination.id,
+                                "label" to destination.label,
+                                "channelId" to (destination.channelId ?: ""),
+                                "itemKind" to "File",
+                                "text" to "",
+                                "url" to "",
+                                "title" to "",
+                                "cachePath" to (path ?: ""),
+                                "displayName" to displayName,
+                                "mimeType" to mimeType
+                            )
+                            
+                            val request = OneTimeWorkRequestBuilder<ShareUploadWorker>()
+                                .setInputData(data)
+                                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+                                .build()
+                            
+                            WorkManager.getInstance(applicationContext).enqueue(request)
+                        }
+                        is ShareItem.Text -> {
+                            val data = workDataOf(
+                                "kind" to destination.kind.name,
+                                "id" to destination.id,
+                                "label" to destination.label,
+                                "channelId" to (destination.channelId ?: ""),
+                                "itemKind" to "Text",
+                                "text" to item.text,
+                                "url" to "",
+                                "title" to "",
+                                "cachePath" to "",
+                                "displayName" to "",
+                                "mimeType" to ""
+                            )
+                            
+                            val request = OneTimeWorkRequestBuilder<ShareUploadWorker>()
+                                .setInputData(data)
+                                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+                                .build()
+                            
+                            WorkManager.getInstance(applicationContext).enqueue(request)
+                        }
+                        is ShareItem.Link -> {
+                            val data = workDataOf(
+                                "kind" to destination.kind.name,
+                                "id" to destination.id,
+                                "label" to destination.label,
+                                "channelId" to (destination.channelId ?: ""),
+                                "itemKind" to "Link",
+                                "text" to "",
+                                "url" to item.url,
+                                "title" to (item.title ?: ""),
+                                "cachePath" to "",
+                                "displayName" to "",
+                                "mimeType" to ""
+                            )
+                            
+                            val request = OneTimeWorkRequestBuilder<ShareUploadWorker>()
+                                .setInputData(data)
+                                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+                                .build()
+                            
+                            WorkManager.getInstance(applicationContext).enqueue(request)
+                        }
                     }
                 }
-                val firstFailure = results.firstOrNull { it !is SendResult.Sent }
-                sendResult = firstFailure ?: SendResult.Sent
+                
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@ShareActivity, "Queued", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
         }
 
