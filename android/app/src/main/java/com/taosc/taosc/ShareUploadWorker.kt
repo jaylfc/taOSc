@@ -68,7 +68,7 @@ class ShareUploadWorker(appContext: Context, params: WorkerParameters) : Corouti
             "Text" -> ShareItem.Text(inputData.getString("text") ?: "")
             "Link" -> ShareItem.Link(
                 url = inputData.getString("url") ?: "",
-                title = inputData.getString("title")
+                title = inputData.getString("title")?.ifEmpty { null }
             )
             "File" -> ShareItem.File(
                 uri = "",
