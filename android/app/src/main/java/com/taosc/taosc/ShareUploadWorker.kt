@@ -72,13 +72,13 @@ class ShareUploadWorker(appContext: Context, params: WorkerParameters) : Corouti
             )
             "File" -> ShareItem.File(
                 uri = "",
-                mimeType = inputData.getString("mimeType")
+                mimeType = inputData.getString("mimeType")?.ifEmpty { null }
             )
             else -> throw IllegalArgumentException("Unknown item kind: $itemKind")
         }
 
         val displayName = inputData.getString("displayName") ?: ""
-        val mimeType = inputData.getString("mimeType")
+        val mimeType = inputData.getString("mimeType")?.ifEmpty { null }
 
         val fileReader: (uri: String) -> SharedFile = { _ ->
             SharedFile(
