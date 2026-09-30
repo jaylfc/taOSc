@@ -11,3 +11,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose" }
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version = "2.9.0" }

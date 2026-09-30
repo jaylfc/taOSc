@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -27,8 +28,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ShareActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,6 +144,26 @@ class ShareActivity : ComponentActivity() {
             return SharedFile(filename = displayName, mimeType = mimeType, bytes = bytes)
         }
 
+        fun copyFileToCache(uri: String): String {
+            val contentResolver: ContentResolver = applicationContext.contentResolver
+            val inputStream = contentResolver.openInputStream(Uri.parse(uri)) ?: return ""
+            
+            val cacheDir = applicationContext.cacheDir
+            val filename = "share_${System.currentTimeMillis()}"
+            val cacheFile = java.io.File(cacheDir, filename)
+            
+            try {
+                cacheFile.outputStream().use { output ->
+                    inputStream.use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                return cacheFile.absolutePath
+            } catch (e: Exception) {
+                return ""
+            }
+        }
+
         fun fetchDestinations() {
             isLoading = true
             errorMessage = null
@@ -159,24 +187,67 @@ class ShareActivity : ComponentActivity() {
         }
 
         fun sendToDestination(destination: ShareDestination) {
+            if (!shareSender.canSend(destination, items)) {
+                errorMessage = "taOS refused this destination"
+                return
+            }
+            
             scope.launch(Dispatchers.IO) {
-                val results = mutableListOf<SendResult>()
+                fun baseData(kind: String, text: String, url: String, title: String, cachePath: String, displayName: String, mimeType: String) = workDataOf(
+                    "kind" to destination.kind.name,
+                    "id" to destination.id,
+                    "label" to destination.label,
+                    "channelId" to (destination.channelId ?: ""),
+                    "itemKind" to kind,
+                    "text" to text,
+                    "url" to url,
+                    "title" to title,
+                    "cachePath" to cachePath,
+                    "displayName" to displayName,
+                    "mimeType" to mimeType
+                )
+
+                val collected = mutableListOf<androidx.work.Data>()
+                val cachedPaths = mutableListOf<String>()
+                var copyFailed = false
                 for (item in items) {
-                    if (!shareSender.canSend(destination, listOf(item))) {
-                        results.add(SendResult.Rejected(0))
-                        break
-                    }
-                    try {
-                        val result = shareSender.send(baseUrl, token, destination, item, ::readFile)
-                        results.add(result)
-                        if (result !is SendResult.Sent) break
-                    } catch (e: Exception) {
-                        sendResult = SendResult.Unreachable
-                        return@launch
+                    when (item) {
+                        is ShareItem.File -> {
+                            val path = copyFileToCache(item.uri)
+                            if (path.isEmpty()) {
+                                copyFailed = true
+                                break
+                            }
+                            cachedPaths.add(path)
+                            val shared = readFile(item.uri)
+                            collected.add(baseData("File", "", "", "", path, shared.filename, shared.mimeType ?: ""))
+                        }
+                        is ShareItem.Text -> collected.add(baseData("Text", item.text, "", "", "", "", ""))
+                        is ShareItem.Link -> collected.add(baseData("Link", "", item.url, item.title ?: "", "", "", ""))
                     }
                 }
-                val firstFailure = results.firstOrNull { it !is SendResult.Sent }
-                sendResult = firstFailure ?: SendResult.Sent
+
+                if (copyFailed) {
+                    cachedPaths.forEach { java.io.File(it).delete() }
+                    withContext(Dispatchers.Main) {
+                        errorMessage = "Could not read the shared file"
+                    }
+                    return@launch
+                }
+
+                for (data in collected) {
+                    val request = OneTimeWorkRequestBuilder<ShareUploadWorker>()
+                        .setInputData(data)
+                        .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+                        .build()
+                    WorkManager.getInstance(applicationContext).enqueue(request)
+                }
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@ShareActivity, "Queued", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
         }
 
