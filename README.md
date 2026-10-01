@@ -65,8 +65,7 @@ client shells are next. See `docs/EPIC-taosc.md` for the live slice status.
 taOSc is open source under the [GNU Affero General Public License v3.0 or
 later](LICENSE) (AGPL-3.0-or-later), matching the taOS core.
 
-You may use, modify, and self-host taOSc freely under the AGPL. A separate
-**commercial license** is available from jaylfc for anyone who wants to use
-taOSc on terms the AGPL does not grant them. See the
-[taOS core repository](https://github.com/jaylfc/taOS) for the canonical
-licensing statement, or contact info@taos.my.
+You may use, modify, and self-host taOSc freely under the AGPL. There is no
+separate commercial license: the AGPL is the only license taOSc is offered
+under. See the [taOS core repository](https://github.com/jaylfc/taOS) for the
+canonical licensing statement.
