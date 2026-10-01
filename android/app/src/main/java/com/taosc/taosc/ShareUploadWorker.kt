@@ -31,6 +31,7 @@ class ShareUploadWorker(appContext: Context, params: WorkerParameters) : Corouti
             .setContentText(message)
             .setContentTitle("taOS share")
             .setAutoCancel(true)
+            .setLocalOnly(true)
             .build()
         notificationManager.notify(id.hashCode(), notification)
     }
