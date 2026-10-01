@@ -110,6 +110,19 @@ class DecisionNotificationManager(private val context: Context) {
         notificationManager.cancel(id)
     }
 
+    fun showAnswerFailed(decisionId: String, title: String, message: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val id = NOTIFICATION_ID + decisionId.hashCode()
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(id, notification)
+    }
+
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
