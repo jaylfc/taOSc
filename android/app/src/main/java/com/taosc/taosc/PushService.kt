@@ -33,6 +33,7 @@ class PushService : Service() {
             .setContentTitle("taOSc")
             .setContentText("Push service running")
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setLocalOnly(true)
         
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val channel = android.app.NotificationChannel(

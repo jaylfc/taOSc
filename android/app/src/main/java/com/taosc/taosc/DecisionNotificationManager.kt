@@ -53,7 +53,7 @@ class DecisionNotificationManager(private val context: Context) {
                             )
 
                             NotificationCompat.Action.Builder(
-                                0,
+                                actionIcon(action),
                                 "Reply",
                                 pendingIntent
                             ).addRemoteInput(remoteInput).build()
@@ -80,7 +80,7 @@ class DecisionNotificationManager(private val context: Context) {
                             )
 
                             NotificationCompat.Action.Builder(
-                                0,
+                                actionIcon(action),
                                 actionLabel(action),
                                 pendingIntent
                             ).build()
@@ -93,6 +93,7 @@ class DecisionNotificationManager(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(payload.title)
             .setContentText(payload.body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(payload.body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
@@ -140,6 +141,16 @@ class DecisionNotificationManager(private val context: Context) {
             is DecisionAction.Pick -> action.label
             is DecisionAction.QuickReply -> "Reply"
             is DecisionAction.AddNote -> "Add note"
+        }
+    }
+
+    private fun actionIcon(action: DecisionAction): Int {
+        return when (action) {
+            is DecisionAction.Approve -> android.R.drawable.checkbox_on_background
+            is DecisionAction.Deny -> android.R.drawable.ic_menu_close_clear_cancel
+            is DecisionAction.Pick -> android.R.drawable.ic_menu_more
+            is DecisionAction.QuickReply -> android.R.drawable.ic_menu_send
+            is DecisionAction.AddNote -> android.R.drawable.ic_menu_edit
         }
     }
 }
