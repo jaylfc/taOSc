@@ -69,7 +69,6 @@ class DecisionActionReceiver : BroadcastReceiver() {
                         AnswerOutcome.DISMISS -> DecisionNotificationManager(context).dismissNotification(decisionId)
                         else -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "This answer wasn't accepted. Open taOS to answer it.")
                     }
-                    asyncResult.finish()
                     return@Thread
                 }
                 
