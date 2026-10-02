@@ -64,7 +64,11 @@ class DecisionActionReceiver : BroadcastReceiver() {
                 val scopedToken = credentialStore.readToken()
                 
                 if (baseUrl.isBlank() || deviceId.isBlank() || scopedToken == null) {
-                    asyncResult.finish()
+                    val outcome = AnswerOutcomePolicy.classify(null, threw = false, missingCredentials = true)
+                    when (outcome) {
+                        AnswerOutcome.DISMISS -> DecisionNotificationManager(context).dismissNotification(decisionId)
+                        else -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "This answer wasn't accepted. Open taOS to answer it.")
+                    }
                     return@Thread
                 }
                 
@@ -87,13 +91,23 @@ class DecisionActionReceiver : BroadcastReceiver() {
                         "Content-Type" to "application/json",
                         "Authorization" to "Bearer $scopedToken"
                     )
-                    client.post(outboundCall.url, outboundCall.body, headers)
+                    val response = client.post(outboundCall.url, outboundCall.body, headers)
+                    val outcome = AnswerOutcomePolicy.classify(response, threw = false, missingCredentials = false)
+                    when (outcome) {
+                        AnswerOutcome.DISMISS -> DecisionNotificationManager(context).dismissNotification(decisionId)
+                        AnswerOutcome.FAILED_RETRY -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "Couldn't send your answer. Check your connection and answer again in taOSc.")
+                        AnswerOutcome.FAILED_USE_TAOS -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "This answer wasn't accepted. Open taOS to answer it.")
+                    }
+                } else {
+                    DecisionNotificationManager(context).dismissNotification(decisionId)
                 }
-                
-                val notificationManager = DecisionNotificationManager(context)
-                notificationManager.dismissNotification(decisionId)
             } catch (e: Exception) {
-                // best-effort
+                val outcome = AnswerOutcomePolicy.classify(null, threw = true, missingCredentials = false)
+                when (outcome) {
+                    AnswerOutcome.DISMISS -> DecisionNotificationManager(context).dismissNotification(decisionId)
+                    AnswerOutcome.FAILED_RETRY -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "Couldn't send your answer. Check your connection and answer again in taOSc.")
+                    AnswerOutcome.FAILED_USE_TAOS -> DecisionNotificationManager(context).showAnswerFailed(decisionId, decisionTitle, "This answer wasn't accepted. Open taOS to answer it.")
+                }
             } finally {
                 asyncResult.finish()
             }
