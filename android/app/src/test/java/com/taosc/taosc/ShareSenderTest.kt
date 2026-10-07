@@ -376,6 +376,156 @@ class ShareSenderTest {
     }
 
     @Test
+    fun `library text 413 returns rejected`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(413, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(413, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Rejected(413), result)
+    }
+
+    @Test
+    fun `library text 400 returns rejected`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(400, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(400, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Rejected(400), result)
+    }
+
+    @Test
+    fun `library text 422 returns rejected`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(422, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(422, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Rejected(422), result)
+    }
+
+    @Test
+    fun `library text 408 returns unreachable`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(408, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(408, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
+    fun `library text 429 returns unreachable`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(429, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(429, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
+    fun `library text 503 returns unreachable`() {
+        val destination = ShareDestination(ShareDestinationKind.LIBRARY, "library", "Library")
+        val item = ShareItem.Text("hello")
+
+        val httpClient = object : HttpClient {
+            override fun post(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(503, "")
+            }
+            override fun postBytes(url: String, body: ByteArray, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(503, "")
+            }
+            override fun get(url: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+            override fun patch(url: String, body: String, headers: Map<String, String>): HttpResponse {
+                return HttpResponse(200, "")
+            }
+        }
+        val sender = ShareSender(httpClient) { "boundary" }
+        val result = sender.send("https://example.com", "token-123", destination, item) { throw AssertionError("should not read file") }
+
+        assertEquals(SendResult.Unreachable, result)
+    }
+
+    @Test
     fun `agent chat text ioexception returns unreachable`() {
         val calls = mutableListOf<RecordedCall>()
         val httpClient = object : HttpClient {

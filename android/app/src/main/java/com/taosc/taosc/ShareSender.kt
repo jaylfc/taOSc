@@ -141,7 +141,9 @@ class ShareSender(private val httpClient: HttpClient, private val boundary: () -
         return when (response.code) {
             in 200..299 -> SendResult.Sent
             401 -> SendResult.NotPaired
-            403, 404 -> SendResult.Rejected(response.code)
+            408, 429 -> SendResult.Unreachable
+            in 400..499 -> SendResult.Rejected(response.code)
+            in 500..599 -> SendResult.Unreachable
             else -> SendResult.Unreachable
         }
     }
